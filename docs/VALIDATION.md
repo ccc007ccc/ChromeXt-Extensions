@@ -124,4 +124,11 @@ INSTRUMENTATION_CODE: -1
 | app/build/outputs/apk/debug/app-debug.apk | daecd85c76764b983ed83b51add0cf05e60823dee20aea0dca647065ab3f72ea |
 | app/build/outputs/apk/release/app-release-unsigned.apk | 40c5027cf40e2027dd2aa72686243a8dfb026999848210417f1025b642c35943 |
 
-**框架设备验收尚未通过。** 手机安装的是 LSPosed IT v2.0.4-it (7748)，读取其框架 DEX 后确认 `XposedInterface.LIB_API = 101`，不满足本模块的 API 102 要求。本轮未升级系统框架或启用 Chrome 作用域，不能把包管理测试记为 Hook、菜单、页面桥接或 Google 同步回归通过。后续须在 API 102 框架下重启 Chrome 后补测；正式扩展运行时、Chrome 内 UI 和 Tampermonkey 执行仍按原里程碑推进。
+初次迁移验收时，手机安装的是 LSPosed IT v2.0.4-it (7748)，读取其框架 DEX 后确认 `XposedInterface.LIB_API = 101`，当时不满足模块的 API 102 要求。包管理测试没有被记为 Hook、菜单、页面桥接或 Google 同步回归通过。用户随后更新框架，补充结果如下；正式扩展运行时、Chrome 内 UI 和 Tampermonkey 执行仍按原里程碑推进。
+
+### 框架升级后补充
+
+- 代码提交 [`9f0d78c`](https://github.com/ccc007ccc/ChromeXt-Extensions/commit/9f0d78c777585b3896dcffb9b45e511d0a644e20) 的 [GitHub CI](https://github.com/ccc007ccc/ChromeXt-Extensions/actions/runs/37883185478) 已全部通过，包括 47 项测试、Lint、两种 APK 构建及 APK 入口/依赖检查。
+- 用户更新并重启到 LSPosed 2.2.1 (7912)。新框架 DEX 与运行中 daemon 均确认 API 102，daemon 正常运行且不在安全模式。
+- 只读检查框架配置确认模块已启用，作用域为用户 0 的 `com.android.chrome`；本次检查没有修改框架数据库。
+- 本次后台检查时 Chrome 主进程尚未运行，未取得模块在 Chrome 进程中的加载及 Hook 日志。已请用户打开 Chrome 后继续验收；菜单、页面桥接和账号同步回归仍待实测。

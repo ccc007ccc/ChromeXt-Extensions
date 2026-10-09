@@ -43,8 +43,10 @@ API 通过 `compileOnly` 使用，不打进 APK；仅 JVM 回调测试的运行�
 
 实际结果记录在 [VALIDATION.md](VALIDATION.md)，未完成的框架实测单独列出。
 
-## 当前设备限制
+## 设备框架核对
 
-检查到的手机框架为 `LSPosed IT v2.0.4-it (7748)`。读取其已安装 `framework.dex` 后，`XposedInterface.LIB_API` 的实际值为 **101**。框架显示版本不能代替 API 版本检查。
+迁移初次验收时，手机框架为 `LSPosed IT v2.0.4-it (7748)`。读取其已安装 `framework.dex` 后，`XposedInterface.LIB_API` 的实际值为 **101**，不满足模块的加载要求。框架显示版本不能代替 API 版本检查。
 
-该框架不满足本模块的 API 102 加载要求。独立包管理功能可以继续验收；Chrome 内入口、菜单、页面桥接和 Google 同步回归需要先升级到支持 API 102 的框架。本轮 API 迁移不改变 WebExtensions 运行时仍未完成的事实。
+用户随后更新并重启到 **LSPosed 2.2.1 (7912)**。已核对新框架 DEX 的 `LIB_API=102`，并通过运行中 daemon 的 `lspctl --json status` 确认 `apiVersion=102`、`safeMode=false`。该设备现已满足框架要求；模块已启用，作用域为用户 0 的 `com.android.chrome`。
+
+Chrome 进程中的实际验收结果见 [VALIDATION.md](VALIDATION.md)。框架可用或模块被识别，不代表 WebExtensions 运行时、正式 Chrome 内 UI 或完整扩展兼容已经实现。
