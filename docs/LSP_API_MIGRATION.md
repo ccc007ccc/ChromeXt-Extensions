@@ -49,4 +49,4 @@ API 通过 `compileOnly` 使用，不打进 APK；仅 JVM 回调测试的运行�
 
 用户随后更新并重启到 **LSPosed 2.2.1 (7912)**。已核对新框架 DEX 的 `LIB_API=102`，并通过运行中 daemon 的 `lspctl --json status` 确认 `apiVersion=102`、`safeMode=false`。该设备现已满足框架要求；模块已启用，作用域为用户 0 的 `com.android.chrome`。
 
-Chrome 进程中的实际验收结果见 [VALIDATION.md](VALIDATION.md)。框架可用或模块被识别，不代表 WebExtensions 运行时、正式 Chrome 内 UI 或完整扩展兼容已经实现。
+0.3.0-dev 已在该框架与官方 Chrome 154.0.8037.127 上取得 API 102 加载和菜单 Hook 的实际证据，菜单可打开 Chrome 所属的原生包管理面板，认证 IPC 与固定文件管理回归通过。结果与限制见 [VALIDATION.md](VALIDATION.md#030-devchrome-原生包管理与运行时实验)。这更新了迁移初次验收时未取得 Chrome 加载日志的状态；完整 WebExtensions 运行时与扩展兼容仍未完成。

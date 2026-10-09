@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-09",
+  "sourceCommit": "72331c17b8d3c1f92d01e6ad977cce81bc16bec5",
+  "request": "GET /json/protocol",
+  "browser": "Chrome/154.0.8037.127",
+  "moduleEnabled": true,
+  "clientError": "CDP connection closed",
+  "exitInfo": {
+    "timestampLocal": "2026-10-09 14:50:39.266 +08:00",
+    "reason": "APP CRASH(NATIVE)",
+    "signal": "SIGTRAP",
+    "status": 5
+  },
+  "nativeBuildId": "64855ac038c8e015dc30743c123443c6c9fb538b",
+  "libchromeStackOffsets": [
+    "0x77ec914",
+    "0x7e3e028",
+    "0x7629bd8",
+    "0x7629ae0",
+    "0x7f96988"
+  ],
+  "isolatedCauseConfirmed": false,
+  "mitigation": "Removed this discovery request; audit the pinned protocol schema offline. Restored Chrome and reran the defined 10 checks successfully."
+}

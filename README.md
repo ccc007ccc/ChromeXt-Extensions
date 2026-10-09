@@ -14,16 +14,20 @@
 - [Chrome 内原生 UI](docs/NATIVE_UI.md)：参考 Chromium Android 桌面端的正式界面方案。
 - [验证记录](docs/VALIDATION.md)：本轮构建、自动测试和设备验证的实际范围。
 - [现代 LSP API 迁移](docs/LSP_API_MIGRATION.md)：API 102 的入口、Hook、构建与框架要求。
+- [运行时实验与决策](docs/RUNTIME_EXPERIMENTS.md)：Chrome 154 的执行世界、生命周期和扩展来源实测。
+- [设备自动验收](docs/DEVICE_TESTING.md)：固定文件导入回归、鉴权反例和 A/B 实验的一次命令入口。
 
 开发分支：feature/webextensions-runtime。首个浏览器基线为 Android 16 上的官方 Chrome 154.0.8037.127。
 
 Google 浏览器同步与扩展的 chrome.storage.sync 是不同功能；后者需要由扩展运行时单独实现。
 
-正式扩展管理、工具栏入口及弹窗以集成到 Chrome 内为目标。当前独立管理应用只是 M1 包管理验证工具，不代表该 UI 目标已经完成。
+0.3.0-dev 已提供 Chrome 菜单内的原生包管理面板，通过认证 Binder 访问模块私有包存储。扩展图标固定、运行开关、popup/options 和完整运行时仍待实现；独立应用保留为备用维护入口。
 
 ## 开发预览
 
-构建并安装 APK 后，从应用列表打开 **ChromeXt-Extensions**，选择扩展 ZIP，查看清单和声明权限后导入。扩展始终显示“未启用 · 扩展运行时尚未就绪”，当前不能启用。
+构建并安装 APK、在提供 API 102 的 LSPosed 中启用模块后，重启 Chrome，从菜单的 **扩展** 打开原生管理面板。选择扩展 ZIP，查看清单和声明权限后导入。扩展始终显示“未启用 · 扩展运行时尚未就绪”，当前不能启用。
+
+若系统限制关联启动，先打开一次 **ChromeXt-Extensions** 应用再回到 Chrome；系统仍拦截服务时，在该应用的系统设置中允许关联启动。独立应用也可以直接管理包。
 
 - ZIP 根目录必须包含 manifest.json。
 - 支持读取 Manifest V2/V3 包；校验包内路径、资源与大小限制。
@@ -31,6 +35,7 @@ Google 浏览器同步与扩展的 chrome.storage.sync 是不同功能；后者�
 - 扩展包保存在本应用私有目录中，与上游用户脚本数据库分离。
 - 内置用户脚本执行、安装、管理与 GM 接口已移除；不会导入或删除上游旧脚本。
 - 包管理不需要启用 LSPosed。Chrome 内的管理入口与保留的调试功能需要 LSPosed；当前不应将其视为完整扩展支持版本。
+- 当前默认拒绝无痕和无法核对所属窗口的管理请求。界面的旋转、多窗口和主题切换矩阵仍待补齐。
 
 应用 ID 为 io.github.ccc007ccc.chromextextensions，与原版 ChromeXt 不同。Kotlin 源码暂保留上游命名空间以减少移植差异。两个模块不要同时作用于同一个 Chrome 进程。
 
@@ -41,17 +46,19 @@ Google 浏览器同步与扩展的 chrome.storage.sync 是不同功能；后者�
 APK 最低支持 Android 8.0（API 26）。Chrome 内的模块功能要求提供 **现代 Xposed API 102** 的框架；旧 Xposed API 82 和现代 API 100/101 不再作为加载目标。独立包管理界面仍可在没有框架的情况下使用。
 
 ~~~sh
-./gradlew :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
+./gradlew :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease :ipc-probe:assembleDebug
 node --test tests/bridge.test.mjs
-python3 tools/check-xposed-apk.py app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/release/app-release-unsigned.apk
+python3 tools/check-xposed-apk.py app/build/outputs/apk/debug/app-debug.apk
+python3 tools/check-xposed-apk.py --forbid-diagnostics app/build/outputs/apk/release/app-release-unsigned.apk
 ~~~
 
 开发机为 SteamOS 时，使用 dev Distrobox 容器运行构建、依赖安装、生成器与测试：
 
 ~~~sh
-distrobox enter -n dev -- env JAVA_HOME=/usr/lib/jvm/java-21-openjdk ANDROID_HOME=/home/deck/Code/Toolchains/android-sdk ./gradlew :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
+distrobox enter -n dev -- env JAVA_HOME=/usr/lib/jvm/java-21-openjdk ANDROID_HOME=/home/deck/Code/Toolchains/android-sdk ./gradlew :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease :ipc-probe:assembleDebug
 distrobox enter -n dev -- node --test tests/bridge.test.mjs
-distrobox enter -n dev -- python3 tools/check-xposed-apk.py app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/release/app-release-unsigned.apk
+distrobox enter -n dev -- python3 tools/check-xposed-apk.py app/build/outputs/apk/debug/app-debug.apk
+distrobox enter -n dev -- python3 tools/check-xposed-apk.py --forbid-diagnostics app/build/outputs/apk/release/app-release-unsigned.apk
 ~~~
 
 也可在未提交的 local.properties 中设置 sdk.dir。调试 APK 输出到 app/build/outputs/apk/debug/app-debug.apk；release 构建默认不签名。

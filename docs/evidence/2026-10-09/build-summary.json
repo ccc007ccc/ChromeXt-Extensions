@@ -1,0 +1,33 @@
+{
+  "sourceCommit": "72331c17b8d3c1f92d01e6ad977cce81bc16bec5",
+  "version": "0.3.0-dev",
+  "jvmTests": {
+    "core": {
+      "tests": 33,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "app": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "nodeTests": {
+    "command": "node --test tests/bridge.test.mjs",
+    "tests": 16,
+    "passed": 16,
+    "failures": 0,
+    "skipped": 0
+  },
+  "totalUnitTests": 60,
+  "lintErrors": 0,
+  "lintWarnings": 7,
+  "artifactsSha256": {
+    "app/build/outputs/apk/debug/app-debug.apk": "3c117317e0962215c050a373794b89b34b1788ffd9aa88028d2802427a8ea67e",
+    "app/build/outputs/apk/release/app-release-unsigned.apk": "72a244bac3d08b4f0cc47ec036f439876364e00f7d7364e18d476c115d4351c4",
+    "ipc-probe/build/outputs/apk/debug/ipc-probe-debug.apk": "90fdd2c7767b73b7e7cbfc549717d69cf63426023cec91cadec3972c1b16d228"
+  }
+}

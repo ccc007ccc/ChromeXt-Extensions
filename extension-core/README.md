@@ -32,6 +32,8 @@ JSON nesting, localization output, and wildcard matching work are bounded indepe
 
 Each published installation contains `metadata.json` and `package/`. A process monitor plus an OS file lock serializes repository operations across instances and processes. On the next list/import/uninstall operation, orphan staging directories left by a killed process are removed while holding that lock. The lock is released by the OS on process death, so recovery cannot remove a concurrent active import. Corrupt installed records are excluded from listing; uninstall accepts only the generated ID and does not follow symbolic links.
 
+`PackageBroker` provides paginated summaries, full descriptions, caller-bound one-use review tokens, cancellation, removal, and safe resource opening for the Android Binder service. Reviews use private snapshots, expire after five minutes, and have a four-review capacity. Android supplies an elapsed-realtime clock and a bounded descriptor reader. JSON DTO field names are pinned for R8 and cross-version IPC. This remains package administration: no Binder handle or resource path is exposed to page JavaScript.
+
 Run tests and formatting inside the `dev` Distrobox using JDK 21:
 
 ```sh

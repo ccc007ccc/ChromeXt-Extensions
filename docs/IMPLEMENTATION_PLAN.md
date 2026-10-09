@@ -8,9 +8,9 @@
 
 | 阶段 | 交付目标 | 当前状态 | 进入下一阶段的门槛 |
 | --- | --- | --- | --- |
-| M0 | 派生仓库、产品入口、关闭内置 GM、能力边界文档 | 已实现；构建/自动检查通过，Hook 实机回归待测 | 内置脚本入口/执行/桥接均被阻断，构建与检查有记录 |
-| M1 | 安全 ZIP/manifest 安装、注册及管理 | 核心与临时 UI 已实现；文件选择器端到端待测 | 安装、禁用、卸载、异常输入和持久化通过验收 |
-| M2 | Chrome 内原生 UI、隔离内容脚本、消息、存储、popup/options | 未实现 | 技术实验 A 及资源隔离门槛通过，最小扩展端到端通过 |
+| M0 | 派生仓库、产品入口、关闭内置 GM、能力边界文档 | 已实现；API 102 加载/菜单已有实机证据，GM 关闭自动检查通过；完整宿主回归待补 | 内置脚本入口/执行/桥接均被阻断，构建与检查有记录 |
+| M1 | 安全 ZIP/manifest 安装、注册及管理 | 核心与维护 UI 已实现；Chrome 内固定文件导入回归通过，系统选择器单项验收单列 | 安装、禁用、卸载、异常输入和持久化通过验收 |
+| M2 | Chrome 内原生 UI、隔离内容脚本、消息、存储、popup/options | 进行中：原生包管理/认证 IPC 已实现；10 项 CDP 实验通过，扩展来源和正式运行时仍缺失 | 技术实验 A 及资源隔离门槛通过，最小扩展端到端通过 |
 | M3 | MV3 后台 worker、事件及恢复 | 未实现 | 技术实验 B 的 worker 部分通过，终止/唤醒/重启通过 |
 | M4 | Tampermonkey 所需浏览器 API 和真实扩展验收 | 未实现 | 原版 Tampermonkey 5.5.1 的完整专项通过 |
 | M5 | API 覆盖扩展、分发更新、同步和 Android 稳定性 | 未实现 | 固定 API 清单与真实扩展矩阵达到已声明支持范围 |
@@ -125,7 +125,7 @@
 宿主是不可变 SteamOS。常规构建、依赖安装、生成器和测试统一使用现有 Distrobox `dev`；保持容器名称不变。在仓库目录执行：
 
 ```sh
-distrobox enter -n dev -- env JAVA_HOME=/usr/lib/jvm/java-21-openjdk ANDROID_HOME=/home/deck/Code/Toolchains/android-sdk ./gradlew :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
+distrobox enter -n dev -- env JAVA_HOME=/usr/lib/jvm/java-21-openjdk ANDROID_HOME=/home/deck/Code/Toolchains/android-sdk ./gradlew :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease :ipc-probe:assembleDebug
 ```
 
 构建要求以仓库 Gradle 配置为准。缺失依赖在 `dev` 中处理，不在 SteamOS 宿主安装开发环境。Ubuntu/Debian/Fedora 兼容容器用于对应 Linux 分发验收，不替代当前 Android 构建环境。
@@ -141,4 +141,6 @@ distrobox enter -n dev -- env JAVA_HOME=/usr/lib/jvm/java-21-openjdk ANDROID_HOM
 
 ## 当前下一步
 
-M0 的移除工作及 M1 的包管理基础已提交为首轮实现，验收范围见 [验证记录](VALIDATION.md)。模块框架 API 已按新要求迁移到 [现代 libxposed API 102](LSP_API_MIGRATION.md)；先在提供 API 102 的框架上完成 Chrome Hook 回归，再推进 Chrome 内原生 UI/认证存储桥及两项运行时技术实验。它们共同决定 M2/M3 的宿主方案，完整扩展执行仍未实现。
+0.3.0-dev 已打通 Chrome 原生包管理与认证存储桥。API 102 加载、实际菜单点击、固定文件的审阅/取消/导入/详情/移除，以及未授权 UID 的 8 个 Binder 操作拒绝均有设备证据。设备回归默认走固定测试文件，不反复搜索系统选择器，见 [自动验收](DEVICE_TESTING.md)。
+
+下一步先按 [运行时实验决策](RUNTIME_EXPERIMENTS.md) 实现生产 CDP 请求/会话/上下文注册与失效，补齐新标签首次导航、后台和进程恢复；同时验证原生扩展注册与资源/后台宿主。当前 `chrome-extension://` 测试导航被中止，`Fetch` 无法为未注册来源提供响应。来源及宿主门槛通过前，继续禁用任意第三方扩展执行，不提前填充空 API。

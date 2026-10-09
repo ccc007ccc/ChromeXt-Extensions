@@ -1,0 +1,10 @@
+{
+  "probe": "UnauthorizedBrokerProbe",
+  "started": "2026-10-09T06:56:09.921024+00:00",
+  "passed": true,
+  "oemTestUidThaw": false,
+  "systemPicker": false,
+  "browserDiagnostic": null,
+  "output": "INSTRUMENTATION_RESULT: stream=PASS: all 8 Binder operations reject a different app UID before reading packages or ZIP input.\n\nINSTRUMENTATION_CODE: -1\n",
+  "sourceCommit": "72331c17b8d3c1f92d01e6ad977cce81bc16bec5"
+}

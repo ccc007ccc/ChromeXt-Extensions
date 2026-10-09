@@ -1,0 +1,276 @@
+{
+  "started": "2026-10-09T06:59:48.206Z",
+  "checks": [
+    {
+      "name": "request-response-and-continuous-events",
+      "passed": true,
+      "evidence": {
+        "contexts": 9,
+        "pageEvents": 21,
+        "sessions": 2
+      }
+    },
+    {
+      "name": "document-start-top-same-origin-cross-origin",
+      "passed": true,
+      "evidence": [
+        {
+          "frame": "C67F21320B5E31ED43C2A16D15C995C5",
+          "origin": "http://127.0.0.1:37449",
+          "first": {
+            "a": "before-first-script",
+            "b": "before-first-script",
+            "secretA": "undefined",
+            "secretB": "undefined",
+            "binding": "undefined"
+          }
+        },
+        {
+          "frame": "DC1B7ABDED33698333830A7988FC213B",
+          "origin": "http://127.0.0.1:37449",
+          "first": {
+            "a": "before-first-script",
+            "b": "before-first-script",
+            "secretA": "undefined",
+            "secretB": "undefined",
+            "binding": "undefined"
+          }
+        },
+        {
+          "frame": "2928F42093C6F11E07FE5A378809D9A8",
+          "origin": "http://localhost:37449",
+          "first": {
+            "a": "before-first-script",
+            "b": "before-first-script",
+            "secretA": "undefined",
+            "secretB": "undefined",
+            "binding": "undefined"
+          }
+        }
+      ]
+    },
+    {
+      "name": "isolated-worlds-and-main-world-boundary",
+      "passed": true,
+      "evidence": [
+        {
+          "world": "a",
+          "state": {
+            "a": "string",
+            "b": "undefined",
+            "main": "undefined",
+            "binding": "function"
+          }
+        },
+        {
+          "world": "b",
+          "state": {
+            "a": "undefined",
+            "b": "string",
+            "main": "undefined",
+            "binding": "undefined"
+          }
+        },
+        {
+          "world": "a",
+          "state": {
+            "a": "string",
+            "b": "undefined",
+            "main": "undefined",
+            "binding": "function"
+          }
+        },
+        {
+          "world": "b",
+          "state": {
+            "a": "undefined",
+            "b": "string",
+            "main": "undefined",
+            "binding": "undefined"
+          }
+        },
+        {
+          "world": "a",
+          "state": {
+            "a": "string",
+            "b": "undefined",
+            "main": "undefined",
+            "binding": "function"
+          }
+        },
+        {
+          "world": "b",
+          "state": {
+            "a": "undefined",
+            "b": "string",
+            "main": "undefined",
+            "binding": "undefined"
+          }
+        }
+      ]
+    },
+    {
+      "name": "host-context-identifies-spoofed-binding-payload",
+      "passed": true,
+      "evidence": [
+        {
+          "name": "chromext-experiment-a-6e8bfc66c2abafeb",
+          "uniqueId": "1837115958971513690.7913643168497863476",
+          "frameId": "C67F21320B5E31ED43C2A16D15C995C5",
+          "sessionId": "2EB5DC361DA076349366971FBC07EBE8",
+          "payload": "{\"claimedExtension\":\"b\",\"probe\":\"6e8bfc66c2abafeb\"}"
+        },
+        {
+          "name": "chromext-experiment-a-6e8bfc66c2abafeb",
+          "uniqueId": "-5064077663235189309.-1002070877749874898",
+          "frameId": "DC1B7ABDED33698333830A7988FC213B",
+          "sessionId": "2EB5DC361DA076349366971FBC07EBE8",
+          "payload": "{\"claimedExtension\":\"b\",\"probe\":\"6e8bfc66c2abafeb\"}"
+        },
+        {
+          "name": "chromext-experiment-a-6e8bfc66c2abafeb",
+          "uniqueId": "-4228333664957097456.-1280968273405389422",
+          "frameId": "2928F42093C6F11E07FE5A378809D9A8",
+          "sessionId": "1065522E5CC4E92C86EF143525C3D468",
+          "payload": "{\"claimedExtension\":\"b\",\"probe\":\"6e8bfc66c2abafeb\"}"
+        }
+      ]
+    },
+    {
+      "name": "spa-preserves-document-identity",
+      "passed": true,
+      "evidence": {
+        "uniqueId": "1837115958971513690.7913643168497863476"
+      }
+    },
+    {
+      "name": "dynamic-frame-injection-and-destruction",
+      "passed": true,
+      "evidence": {
+        "dynamicFirst": {
+          "a": "before-first-script",
+          "b": "before-first-script",
+          "secretA": "undefined",
+          "secretB": "undefined",
+          "binding": "undefined"
+        },
+        "staleFrameRejected": true
+      }
+    },
+    {
+      "name": "redirect-invalidates-context-and-pending-call",
+      "passed": true,
+      "evidence": {
+        "staleNavigationRejected": true,
+        "heldResult": {
+          "rejected": true,
+          "error": "Inspected target navigated or closed"
+        }
+      }
+    },
+    {
+      "name": "reload-reinjects-before-first-script",
+      "passed": true,
+      "evidence": {
+        "a": "before-first-script",
+        "b": "before-first-script",
+        "secretA": "undefined",
+        "secretB": "undefined",
+        "binding": "undefined"
+      }
+    },
+    {
+      "name": "back-navigation-restores-fixture",
+      "passed": true,
+      "evidence": {
+        "first": {
+          "a": "before-first-script",
+          "b": "before-first-script",
+          "secretA": "undefined",
+          "secretB": "undefined",
+          "binding": "undefined"
+        },
+        "persisted": true
+      }
+    },
+    {
+      "name": "web-origin-cors-remains-enforced",
+      "passed": true,
+      "evidence": {
+        "blocked": true
+      }
+    }
+  ],
+  "observations": {
+    "browserVersion": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/154.0.8037.127",
+      "revision": "@4ed32028bcb2d00bc07a8880eb85aca80c9c5ec6",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Mobile Safari/537.36",
+      "jsVersion": "15.4.80.20"
+    },
+    "oopif": {
+      "observed": true,
+      "sessions": 2,
+      "requirement": "If no OOPIF was created by this Chrome configuration, that case remains unverified"
+    },
+    "bfcache": {
+      "observed": true,
+      "requirement": "A normal back navigation does not prove BFCache restoration"
+    },
+    "extensionOrigin": {
+      "direct": {
+        "frameId": "C67F21320B5E31ED43C2A16D15C995C5",
+        "loaderId": "84B1E92BCF288399C9EE94EF30C0770A",
+        "errorText": "net::ERR_ABORTED",
+        "isDownload": false
+      },
+      "interceptedNavigation": {
+        "frameId": "C67F21320B5E31ED43C2A16D15C995C5",
+        "loaderId": "4756E82F29C9BD639BC3F5EAE34A602F",
+        "errorText": "net::ERR_ABORTED",
+        "isDownload": false
+      },
+      "intercepted": 0,
+      "nativePage": {
+        "origin": "http://127.0.0.1:37449",
+        "loaded": false,
+        "runtimeId": null
+      }
+    },
+    "workerHost": {
+      "proven": false,
+      "reason": "A browser-registered MV3 extension service worker host has not been established. A page worker is not a substitute."
+    },
+    "remainingA": [
+      "first navigation of arbitrary newly created tabs",
+      "browser background/freezer recovery",
+      "renderer loss and Chrome process restart"
+    ]
+  },
+  "scope": "Dedicated synthetic tab and child frames only; no production extension runtime",
+  "gates": {
+    "A": "partial",
+    "B": "blocked-on-native-extension-origin",
+    "arbitraryExtensionExecution": "disabled"
+  },
+  "fixtures": {
+    "extension-a/manifest.json": "5824d68759e2d2b6cc859e8f8c30f1e47e6669adb909baa997473d42b97c8427",
+    "extension-a/content.js": "47c99720f8a7832c907d7e29629918d5449646d09fe9241e061a216dd6501866",
+    "extension-b/manifest.json": "03de022f164555e3eb628f21a4d9344e5f453824efbb84a0d2fc0cc75cd82bbb",
+    "extension-b/content.js": "b208255181064a4ab5f13c541f2dfc5c9fdb8f9d5d23a7288aa10b218ff0b391"
+  },
+  "browser": {
+    "Android-Package": "com.android.chrome",
+    "Browser": "Chrome/154.0.8037.127",
+    "Protocol-Version": "1.3",
+    "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Mobile Safari/537.36",
+    "V8-Version": "15.4.80.20",
+    "WebKit-Version": "537.36 (@4ed32028bcb2d00bc07a8880eb85aca80c9c5ec6)",
+    "webSocketDebuggerUrl": "ws://127.0.0.1:36759/devtools/browser"
+  },
+  "android": "16",
+  "closedOwnTarget": true,
+  "finished": "2026-10-09T06:59:52.974Z",
+  "sourceCommit": "72331c17b8d3c1f92d01e6ad977cce81bc16bec5"
+}

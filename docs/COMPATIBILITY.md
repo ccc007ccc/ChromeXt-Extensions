@@ -19,22 +19,24 @@
 
 “待实测”可作为实现状态的验证补充。`已验证` 必须同时给出证据，不以函数存在、返回成功或单纯 APK 构建成功为依据。
 
-本轮构建和测试结果见 [VALIDATION.md](VALIDATION.md)。正式 UI 必须位于 Chrome 内，参考 [NATIVE_UI.md](NATIVE_UI.md)；当前独立管理 Activity 不算原生扩展 UI 已完成。
+本轮构建和测试结果见 [VALIDATION.md](VALIDATION.md)。0.3.0-dev 的包管理面板已位于 Chrome 内，完整 UI 范围见 [NATIVE_UI.md](NATIVE_UI.md)；运行时探测的范围与限制见 [RUNTIME_EXPERIMENTS.md](RUNTIME_EXPERIMENTS.md)。
 
 ## 平台与基础能力
 
 | 项目 | 状态 | 证据与限制 |
 | --- | --- | --- |
 | 派生基线 | 已确认 | 上游 `chromium-compat`，`0a6253bb975f3bd868df1521cba039c40b9003ad` |
-| LSP API | 已迁移；Hook 待实测 | 仅现代 `libxposed:api:102.0.0`；最低/目标 API 102。手机已更新到 LSPosed 2.2.1，运行中 daemon 已确认 API 102；见 [迁移记录](LSP_API_MIGRATION.md) |
-| 目标 Android | 待实测 | Android 16 为首要目标，完整模块验收尚未记录 |
-| 目标 Chrome | 待实测 | 官方 `154.0.8037.127`；静态 APK 检查发现部分所需接口，不等于挂钩成功 |
-| 内置用户脚本/GM 关闭 | 进行中 | M0 要求；入口、执行和桥接均需核验 |
+| LSP API | 已迁移并实机加载 | 仅现代 `libxposed:api:102.0.0`；LSPosed 2.2.1 (7912) 中确认 API 102、浏览器 Hook 和菜单点击；见 [迁移记录](LSP_API_MIGRATION.md) |
+| 目标 Android | 部分实测 | Android 16；包管理/鉴权/运行时实验通过已列子项，完整稳定性与账号同步待验 |
+| 目标 Chrome | 部分实测 | 官方 `154.0.8037.127`；原生菜单与管理面板、认证 IPC 及 10 项 CDP 实验有设备证据 |
+| 内置用户脚本/GM 关闭 | 已实现关闭 | 16 项 Node 回归通过；完整设备侧旧入口矩阵仍待补齐 |
 | 上游扩展原型 | 不支持 | `LocalFiles.kt`/`extension.js` 只提供有限原型与 stub，不能启用为正式引擎 |
 | ZIP 导入与管理 | 已实现包管理基础 | MV2/MV3 包元数据、审阅、原子导入、持久列表与卸载；不执行扩展，完整文件选择器流程待实机验收 |
+| Chrome 内包管理面板 | 已验证基本流程 | 菜单、固定文件审阅/取消/导入、详情、移除及关闭；多窗口、旋转、主题切换未完整验收 |
+| 包存储认证 Binder | 已验证正反例 | 实际 Chrome UID 的完整事务通过；独立应用的全部 8 个操作拒绝。签名、跨用户和隔离 UID 政策另有单元测试 |
 | MV2 内容脚本/background | 未实现 | 安装器解析 MV2 不代表可执行 |
 | MV3 内容脚本/service worker | 未实现 | 需要隔离及后台宿主技术实验 |
-| `chrome-extension://` 来源 | 未实现 | 原生实现或替代来源的语义差异需先验证 |
+| `chrome-extension://` 来源 | 实验未建立 | 未注册测试 ID 的导航返回 `ERR_ABORTED`，`Fetch` 没有收到请求；仍需原生注册/宿主方案，不能由 URL 字符串替代 |
 | Chrome 网上应用店/CRX3 | 未实现 | ZIP 导入不包含商店接入、签名校验和自动更新 |
 | 其他 Chrome 版本/浏览器 | 未验证 | 不继承上游所列兼容范围 |
 
@@ -86,15 +88,15 @@
 
 | 能力 | 当前状态 | 门槛 |
 | --- | --- | --- |
-| Manifest 基础解析 | 进行中 | 字段类型/版本/入口文件验证，不执行扩展 |
+| Manifest 基础解析 | 已实现基础校验 | 字段类型/版本/入口文件验证，不执行扩展；不是完整 Chrome schema |
 | 未支持的必需能力报告 | 进行中 | 阻止启用并列出原因；optional 能力单独处理 |
-| `content_scripts` 匹配与时机 | 未实现 | `matches/exclude_matches/run_at/all_frames` 等逐项验收 |
-| ISOLATED / MAIN world | 未实现 | 技术实验 A；MAIN 不获得特权桥 |
+| `content_scripts` 匹配与时机 | 运行时未实现；有实验 | `document_start` 的测试页首段脚本前注入通过；生产匹配器和首次导航捕获仍缺失 |
+| ISOLATED / MAIN world | 实验通过已测边界 | 两个世界与 MAIN 全局隔离、限定世界的 binding、宿主上下文识别通过；生产 API Broker 未实现 |
 | popup / options | 未实现 | 私有来源、真实资源、权限与生命周期 |
 | MV2 background page/scripts/event page | 未实现 | 按类型单独验收 |
 | MV3 classic/module service worker | 未实现 | 技术实验 B；事件驱动的启动/终止/唤醒 |
 | CSP / `web_accessible_resources` | 未实现 | 私有资源默认不可读取，不能通配 CORS |
-| 多扩展/多 frame/OOPIF | 未实现 | 身份、消息、数据和导航边界 |
+| 多扩展/多 frame/OOPIF | 部分实验通过 | 三个 frame、独立 OOPIF session、动态 frame、重定向/刷新失效、BFCache 恢复有证据；扩展消息/存储及生产生命周期尚缺失 |
 | 隐身执行 | 不支持 | 后续需独立授权和隔离模型；当前不得默认运行 |
 | Chrome Google 浏览器同步 | 待实测 | 保持原浏览器功能是回归项，不代表扩展同步 |
 | 扩展 `storage.sync` / 安装列表同步 | 未实现 | 独立提供者、授权与冲突设计 |
@@ -103,7 +105,7 @@
 
 | 扩展 | 当前状态 | 完成判据 |
 | --- | --- | --- |
-| 最小标准 WebExtension fixture | 未实现 | 内容脚本、消息、popup/options、存储及隔离反例通过 |
+| 最小标准 WebExtension fixture | 未完成端到端 | 已有两份标准 manifest/source fixture 用于 CDP 实验；尚无模块运行时的消息、popup/options 和存储闭环 |
 | MV3 worker fixture | 未实现 | worker 终止、事件唤醒、错误及重启恢复通过 |
 | Tampermonkey 5.5.1 | 不支持 | 当前运行时未实现；需真实原包及自身管理流程通过完整专项，仅页面能打开不算支持 |
 | 其他公开扩展 | 未验证 | 后续逐包记录来源、版本、校验值、许可和功能结果 |
@@ -123,7 +125,7 @@
 
 ## 验收记录
 
-本文档创建时尚未写入本轮构建及设备验收结果。主实施线程在完成检查后追加实际记录，不将计划预填为通过。
+按版本记录的结果见 [VALIDATION.md](VALIDATION.md)，0.3.0-dev 的机器可读设备证据位于 [evidence/2026-10-09](evidence/2026-10-09/)。
 
 建议每条记录使用以下字段：
 
