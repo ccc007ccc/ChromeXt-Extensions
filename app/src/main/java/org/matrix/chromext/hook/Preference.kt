@@ -29,23 +29,18 @@ object PreferenceHook : BaseHook() {
 
     proxy.addPreferencesFromResource
         // public void addPreferencesFromResource(Int preferencesResId)
-        .hookMethod {
-          before {
-            if (it.thisObject::class.java == proxy.developerSettings) {
-              it.args[0] = R.xml.developer_preferences
-            }
+        .intercept { chain ->
+          if (chain.thisObject::class.java != proxy.developerSettings)
+              return@intercept chain.proceed()
+          val args = chain.args.toTypedArray()
+          args[0] = R.xml.developer_preferences
+          val result = chain.proceed(args)
+          val preferences = mutableMapOf<String, Any>()
+          arrayOf("eruda", "gesture_mod", "bookmark", "reset", "exit").forEach {
+            preferences[it] = proxy.findPreference.invoke(chain.thisObject, it)!!
           }
-
-          after {
-            if (it.thisObject::class.java == proxy.developerSettings) {
-              val refThis = it
-              val preferences = mutableMapOf<String, Any>()
-              arrayOf("eruda", "gesture_mod", "bookmark", "reset", "exit").forEach {
-                preferences[it] = proxy.findPreference.invoke(refThis.thisObject, it)!!
-              }
-              proxy.setClickListener(preferences.toMap())
-            }
-          }
+          proxy.setClickListener(preferences.toMap())
+          result
         }
 
     findMethod(proxy.developerSettings, true) {
@@ -55,8 +50,8 @@ object PreferenceHook : BaseHook() {
           // public static Fragment instantiate(Context context,
           // String fname, @Nullable Bundle args)
         }
-        .hookAfter {
-          if (it.result::class.java == proxy.developerSettings) {
+        .hookAfter { it, result ->
+          if (result?.javaClass == proxy.developerSettings) {
             Resource.enrich(it.args[0] as Context)
           }
         }
@@ -73,14 +68,15 @@ object PreferenceHook : BaseHook() {
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       findMethodOrNull(WindowInsets::class.java) { name == "getSystemGestureInsets" }
-          ?.hookBefore {
+          ?.intercept { chain ->
             val ctx = Chrome.getContext()
             val sharedPref = ctx.getSharedPreferences("ChromeXt", Context.MODE_PRIVATE)
             if (sharedPref.getBoolean("gesture_mod", true)) {
-              it.result = Insets.of(0, 0, 0, 0)
               toggleGestureConflict(true)
+              Insets.of(0, 0, 0, 0)
             } else {
               toggleGestureConflict(false)
+              chain.proceed()
             }
           }
     }
@@ -91,18 +87,19 @@ object PreferenceHook : BaseHook() {
                 parameterTypes.size == 1 &&
                 parameterTypes.first() == Int::class.java
           }
-          .hookBefore {
-            val typeMask = it.args[0] as Int
+          .intercept { chain ->
+            val typeMask = chain.args[0] as Int
             if (typeMask == WindowInsets.Type.systemGestures()) {
               val ctx = Chrome.getContext()
               val sharedPref = ctx.getSharedPreferences("ChromeXt", Context.MODE_PRIVATE)
               if (sharedPref.getBoolean("gesture_mod", true)) {
-                it.result = Insets.of(0, 0, 0, 0)
                 toggleGestureConflict(true)
+                return@intercept Insets.of(0, 0, 0, 0)
               } else {
                 toggleGestureConflict(false)
               }
             }
+            chain.proceed()
           }
     }
 

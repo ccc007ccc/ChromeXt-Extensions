@@ -17,6 +17,7 @@ import org.matrix.chromext.utils.findMethod
 import org.matrix.chromext.utils.findMethodOrNull
 import org.matrix.chromext.utils.hookAfter
 import org.matrix.chromext.utils.hookBefore
+import org.matrix.chromext.utils.intercept
 
 object UserScriptHook : BaseHook() {
 
@@ -24,7 +25,7 @@ object UserScriptHook : BaseHook() {
 
     val proxy = UserScriptProxy
 
-    // proxy.tabModelJniBridge.declaredConstructors[0].hookAfter {
+    // proxy.tabModelJniBridge.declaredConstructors[0].hookAfter { it, _ ->
     //   Chrome.addTabModel(it.thisObject)
     // }
 
@@ -40,7 +41,7 @@ object UserScriptHook : BaseHook() {
                 }
             else it
           }
-          .hookAfter { Chrome.updateTab(it.thisObject) }
+          .hookAfter { it, _ -> Chrome.updateTab(it.thisObject) }
 
       runCatching {
             // Avoid exceptions thrown due to signature conficts while binding services
@@ -52,19 +53,18 @@ object UserScriptHook : BaseHook() {
 
             findMethod(ConnectionManager) { name == "connectToService" }
                 // (Landroid/content/Context;Landroid/content/Intent;)Z
-                .hookBefore {
+                .intercept {
                   val hook = it
                   val ctx = hook.args[0] as Context
                   val intent = hook.args[1] as Intent
                   val connection = mServiceConnection.get(hook.thisObject) as ServiceConnection
                   runCatching {
                         if (BuildConfig.DEBUG) Log.d("Binding service ${intent} with ${ctx}")
-                        val bound = ctx.bindService(intent, connection, Context.BIND_AUTO_CREATE)
-                        hook.result = bound
+                        ctx.bindService(intent, connection, Context.BIND_AUTO_CREATE)
                       }
-                      .onFailure {
+                      .getOrElse {
                         if (BuildConfig.DEBUG) Log.ex(it)
-                        hook.result = false
+                        false
                       }
                 }
           }
@@ -109,7 +109,9 @@ object UserScriptHook : BaseHook() {
       runCatching {
             findMethod(proxy.tabWebContentsDelegateAndroidImpl) { name == "loadingStateChanged" }
                 // public void loadingStateChanged(boolean toDifferentDocument)
-                .hookAfter { proxy.setLoading(proxy.getTab(it.thisObject), it.args[0] as Boolean) }
+                .hookAfter { it, _ ->
+                  proxy.setLoading(proxy.getTab(it.thisObject), it.args[0] as Boolean)
+                }
             proxy.startTrackingLoadingState()
           }
           .onFailure { Log.ex(it, "Fail to track the loading state of tabs") }
@@ -119,7 +121,7 @@ object UserScriptHook : BaseHook() {
           name == "onUpdateUrl" || name == "onUpdateTargetUrl"
         }
         // public void onUpdateTargetUrl(GURL url)
-        .hookAfter {
+        .hookAfter { it, _ ->
           val tab = proxy.getTab(it.thisObject)!!
           if (!Chrome.isSamsung) Chrome.updateTab(tab)
           var url = proxy.parseUrl(it.args[0])!!
@@ -136,7 +138,7 @@ object UserScriptHook : BaseHook() {
         }
         // public boolean addMessageToConsole(int level, String message, int lineNumber,
         // String sourceId)
-        .hookAfter {
+        .hookAfter { it, _ ->
           // This should be the way to communicate with the front-end of ChromeXt
           val lineNumber = it.args[2] as Int
           val sourceId = it.args[3] as String

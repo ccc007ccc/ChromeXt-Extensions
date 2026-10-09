@@ -125,7 +125,7 @@
 宿主是不可变 SteamOS。常规构建、依赖安装、生成器和测试统一使用现有 Distrobox `dev`；保持容器名称不变。在仓库目录执行：
 
 ```sh
-distrobox enter -n dev -- env JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew :extension-core:test :app:lintDebug :app:assembleDebug :app:assembleRelease
+distrobox enter -n dev -- env JAVA_HOME=/usr/lib/jvm/java-21-openjdk ANDROID_HOME=/home/deck/Code/Toolchains/android-sdk ./gradlew :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
 ```
 
 构建要求以仓库 Gradle 配置为准。缺失依赖在 `dev` 中处理，不在 SteamOS 宿主安装开发环境。Ubuntu/Debian/Fedora 兼容容器用于对应 Linux 分发验收，不替代当前 Android 构建环境。
@@ -141,4 +141,4 @@ distrobox enter -n dev -- env JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew :
 
 ## 当前下一步
 
-M0 的移除工作及 M1 的包管理基础已提交为首轮实现，验收范围见 [验证记录](VALIDATION.md)。接下来优先推进 Chrome 内原生 UI/认证存储桥，以及两项运行时技术实验；它们共同决定 M2/M3 的宿主方案。完整扩展执行仍未实现。
+M0 的移除工作及 M1 的包管理基础已提交为首轮实现，验收范围见 [验证记录](VALIDATION.md)。模块框架 API 已按新要求迁移到 [现代 libxposed API 102](LSP_API_MIGRATION.md)；先在提供 API 102 的框架上完成 Chrome Hook 回归，再推进 Chrome 内原生 UI/认证存储桥及两项运行时技术实验。它们共同决定 M2/M3 的宿主方案，完整扩展执行仍未实现。

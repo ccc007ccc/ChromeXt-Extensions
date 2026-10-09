@@ -9,7 +9,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageButton
-import de.robv.android.xposed.XC_MethodHook.Unhook
+import io.github.libxposed.api.XposedInterface.HookHandle
 import java.lang.reflect.Modifier
 import java.util.ArrayList
 import java.util.LinkedHashSet
@@ -144,10 +144,10 @@ object PageMenuHook : BaseHook() {
               parameterTypes[1] == Boolean::class.java &&
               returnType == Boolean::class.java
         }
-        .hookBefore {
+        .intercept {
           if (menuHandler(it.thisObject as Context, it.args[0] as Int)) {
-            it.result = true
-          }
+            true
+          } else it.proceed()
         }
 
     findMethod(proxy.customTabActivity) {
@@ -157,13 +157,13 @@ object PageMenuHook : BaseHook() {
               parameterTypes[1] == Boolean::class.java &&
               returnType == Boolean::class.java
         }
-        .hookBefore {
+        .intercept {
           if (menuHandler(it.thisObject as Context, it.args[0] as Int)) {
-            it.result = true
-          }
+            true
+          } else it.proceed()
         }
 
-    var findMenuHook: Unhook? = null
+    var findMenuHook: HookHandle? = null
     findMenuHook =
         findMethod(proxy.chromeTabbedActivity) {
               parameterTypes.size == 0 &&
@@ -179,16 +179,16 @@ object PageMenuHook : BaseHook() {
                   (returnType.isInterface() || Modifier.isAbstract(returnType.modifiers))
             }
             // public AppMenuPropertiesDelegate createAppMenuPropertiesDelegate()
-            .hookAfter {
+            .hookAfter { _, result ->
               findMenuHook!!.unhook()
-              val tabbedAppMenuPropertiesDelegate = it.result::class.java
+              val tabbedAppMenuPropertiesDelegate = requireNotNull(result)::class.java
               inflateAppMenu(tabbedAppMenuPropertiesDelegate)
             }
 
     isInit = true
   }
 
-  fun inflateAppMenu(tabbedAppMenuPropertiesDelegate: Class<*>): Unhook {
+  fun inflateAppMenu(tabbedAppMenuPropertiesDelegate: Class<*>): HookHandle {
     val proxy = PageMenuProxy
     val appMenuPropertiesDelegateImpl = tabbedAppMenuPropertiesDelegate.superclass as Class<*>
     // Can be found by searching `Android.PrepareMenu`
@@ -243,7 +243,7 @@ object PageMenuHook : BaseHook() {
                   parameterTypes.size == 2 && parameterTypes[1] == View::class.java
                 }
             if (onFooterViewInflated != null) {
-              onFooterViewInflated.hookAfter {
+              onFooterViewInflated.hookAfter { it, _ ->
                 brandBookmarkButton(it.thisObject, it.args[1] as? View)
               }
             } else {
@@ -251,7 +251,9 @@ object PageMenuHook : BaseHook() {
                   findMethod(tabbedAppMenuPropertiesDelegate, true) {
                     parameterTypes.size == 1 && returnType == View::class.java
                   }
-              footerFactory.hookAfter { brandBookmarkButton(it.thisObject, it.result as? View) }
+              footerFactory.hookAfter { chain, result ->
+                brandBookmarkButton(chain.thisObject, result as? View)
+              }
             }
           }
           .onFailure { Log.ex(it, "Cannot reach the Brave app menu footer") }
@@ -268,7 +270,7 @@ object PageMenuHook : BaseHook() {
     // public void prepareMenu(Menu menu, AppMenuHandler handler)
 
     if (prepareMenu != null)
-        return prepareMenu.hookAfter prepare@{
+        return prepareMenu.hookAfter prepare@{ it, _ ->
           val tabProvider = mActivityTabProvider.get(it.thisObject)!!
           Chrome.updateTab(tabProvider.invokeMethod { name == "get" })
           val ctx = mContext.get(it.thisObject) as Context
@@ -443,7 +445,7 @@ object PageMenuHook : BaseHook() {
               (buildMenuModelList == null || name == buildMenuModelList)
         }
         // public MVCListAdapter.ModelList buildMenuModelList()
-        .hookAfter {
+        .hookAfter { it, result ->
           val delegate = it.thisObject
           val tabProvider = mActivityTabProvider.get(delegate)!!
           Chrome.updateTab(tabProvider.invokeMethod { name == "get" })
@@ -452,7 +454,7 @@ object PageMenuHook : BaseHook() {
           Resource.enrich(ctx)
           val url = getUrl()
 
-          @Suppress("UNCHECKED_CAST") val menuModels = mItems.get(it.result) as MutableList<Any>
+          @Suppress("UNCHECKED_CAST") val menuModels = mItems.get(result) as MutableList<Any>
 
           // Every PropertyModel value is boxed in a one field holder, null until the key is written
           fun propertyOf(item: Any, key: String): Any? {

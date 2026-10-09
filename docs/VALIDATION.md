@@ -80,3 +80,48 @@ adb shell am instrument -w -r io.github.ccc007ccc.chromextextensions/org.matrix.
 后续阶段须追加自己的真实验证记录，不将本轮包管理结果扩展为运行时兼容声明。
 
 Tampermonkey 静态检查所用本地 ZIP 摘要为 88b9af2cd43e96f9a6a676735a5d36a3cd9a6b5d3ccbe48a773579ef75808925。该第三方包没有提交到本仓库。
+
+## 现代 LSP API 102 迁移验收
+
+日期：2026-10-09。对应 0.2.0-dev（versionCode 2），迁移设计与框架要求见 [LSP_API_MIGRATION.md](LSP_API_MIGRATION.md)。本节追加新结果，不覆盖上面的 0.1.0-dev 历史记录。
+
+环境：SteamOS 宿主、Distrobox `dev`；JDK 21、Gradle 9.5.1、AGP 9.2.1、Kotlin 2.3.10、SDK Platform 37.0、Build Tools 37.0.0。应用最低 Android API 26、targetSdk 35，模块最低/目标 Xposed API 102。
+
+| 检查 | 结果 | 范围 |
+| --- | --- | --- |
+| API 发布版本核对 | 通过 | Maven Central 最新稳定版为 `102.0.0`；三份核心 API 源码与指定 JingMatrix 仓库当前提交一致 |
+| Hook JVM 测试 | 9 项通过 | 前后顺序、调用上下文、构造/静态调用、空结果、返回值保留、不可变参数替换、动作拦截、原异常传播及保护模式注册 |
+| extension-core JVM 测试 | 22 项通过 | 原有包检查、导入、持久化、卸载和失败路径 |
+| browser bridge Node 测试 | 16 项通过 | 原有保留桥接行为及内置 GM/安装路径继续关闭 |
+| lintDebug | 0 错误、4 警告 | 私有 `Application.attach` 反射、保留 targetSdk 35、固定 Gradle 版本、上游资源名称反射；未增加屏蔽规则 |
+| 全新 app 构建 | 通过 | 清理 app 构建目录后生成 Debug 与 R8/资源缩减 Release，均为 0.2.0-dev |
+| Debug/Release APK 检查 | 通过 | 现代 META-INF 入口/配置/作用域；公开无参入口与生命周期仍在 DEX 中；无旧 API 类型引用或旧 manifest 元数据；未打包框架 API 类 |
+| 测试组件隔离 | 通过 | Debug 包包含 PackageStoreSmokeInstrumentation，Release 包不包含 |
+| Android 无界面测试 | 通过 | 在已有安装上更新 Debug APK，包管理原有检查及未注入框架时的日志调用均通过 |
+
+最终构建及 APK 检查命令：
+
+~~~sh
+distrobox enter -n dev -- env JAVA_HOME=/usr/lib/jvm/java-21-openjdk ANDROID_HOME=/home/deck/Code/Toolchains/android-sdk ./gradlew :app:clean :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
+distrobox enter -n dev -- node --test tests/bridge.test.mjs
+distrobox enter -n dev -- python3 tools/check-xposed-apk.py app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/release/app-release-unsigned.apk
+~~~
+
+报告分别位于 `app/build/reports/tests/testDebugUnitTest`、`extension-core/build/reports/tests/test` 和 `app/build/reports/lint-results-debug.html`。CI 已使用相同测试及 APK 检查，并固定可安装 Platform 37.0 的 Command-line Tools 22.0。
+
+手机上更新安装成功。无界面 instrumentation 额外确认独立应用 classloader 中不存在 `XposedModule`，而日志调用仍能正常执行；测试不打开 Chrome 或管理 Activity，使用独立临时目录。
+
+~~~text
+PASS: inspect without writes; distinct imports; persisted reload; traversal rejection; isolated removal; manager component; logging without framework API. No extension code executed.
+traversal_rejection=INVALID_ARCHIVE
+INSTRUMENTATION_CODE: -1
+~~~
+
+本轮本地产物摘要（CI 产物可能因构建/签名/版本控制元数据不同而变化）：
+
+| 产物 | SHA-256 |
+| --- | --- |
+| app/build/outputs/apk/debug/app-debug.apk | daecd85c76764b983ed83b51add0cf05e60823dee20aea0dca647065ab3f72ea |
+| app/build/outputs/apk/release/app-release-unsigned.apk | 40c5027cf40e2027dd2aa72686243a8dfb026999848210417f1025b642c35943 |
+
+**框架设备验收尚未通过。** 手机安装的是 LSPosed IT v2.0.4-it (7748)，读取其框架 DEX 后确认 `XposedInterface.LIB_API = 101`，不满足本模块的 API 102 要求。本轮未升级系统框架或启用 Chrome 作用域，不能把包管理测试记为 Hook、菜单、页面桥接或 Google 同步回归通过。后续须在 API 102 框架下重启 Chrome 后补测；正式扩展运行时、Chrome 内 UI 和 Tampermonkey 执行仍按原里程碑推进。

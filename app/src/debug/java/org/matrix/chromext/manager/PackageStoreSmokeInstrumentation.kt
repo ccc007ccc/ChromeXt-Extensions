@@ -13,6 +13,7 @@ import org.matrix.chromext.extensions.ExtensionExecutionState
 import org.matrix.chromext.extensions.ExtensionPackageException
 import org.matrix.chromext.extensions.ExtensionRepository
 import org.matrix.chromext.extensions.PackageError
+import org.matrix.chromext.utils.Log
 
 /**
  * Debug-only Android filesystem/ART verification; never launches an activity or runs extension JS.
@@ -28,6 +29,13 @@ class PackageStoreSmokeInstrumentation : Instrumentation() {
     var resultCode = Activity.RESULT_CANCELED
     val workspace = File(targetContext.cacheDir, "package-smoke-" + UUID.randomUUID())
     try {
+      // The manager must work without libxposed classes in its classloader.
+      check(
+          runCatching {
+                targetContext.classLoader.loadClass("io.github.libxposed.api.XposedModule")
+              }
+              .exceptionOrNull() is ClassNotFoundException)
+      Log.i("Standalone manager logging works without an injected framework")
       check(workspace.mkdirs())
       val archive = File(workspace, "fixture.zip")
       writeZip(archive, false)
@@ -66,7 +74,7 @@ class PackageStoreSmokeInstrumentation : Instrumentation() {
       result.putString(
           "stream",
           "PASS: inspect without writes; distinct imports; persisted reload; traversal rejection; " +
-              "isolated removal; manager component. No extension code executed.\n")
+              "isolated removal; manager component; logging without framework API. No extension code executed.\n")
       resultCode = Activity.RESULT_OK
     } catch (error: Throwable) {
       result.putString("stream", "FAIL: " + error.stackTraceToString())

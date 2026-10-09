@@ -10,7 +10,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.TextView
-import de.robv.android.xposed.XC_MethodHook.Unhook
+import io.github.libxposed.api.XposedInterface.HookHandle
 import java.lang.Class
 import java.lang.ref.WeakReference
 import org.matrix.chromext.Chrome
@@ -48,14 +48,14 @@ object ContextMenuHook : BaseHook() {
     }
   }
 
-  private var actionModeFinder: Unhook? = null
-  private var popupWindowFinder: Unhook? = null
+  private var actionModeFinder: HookHandle? = null
+  private var popupWindowFinder: HookHandle? = null
 
   private fun hookActionMode(cls: Class<*>) {
     actionModeFinder?.unhook()
     findMethod(cls) { name == "onCreateActionMode" }
         // public abstract boolean onCreateActionMode (ActionMode mode, Menu menu)
-        .hookAfter {
+        .hookAfter { it, _ ->
           val url = Chrome.getUrl()
           val mode = it.args[0] as ActionMode
           val menu = it.args[1] as Menu
@@ -79,7 +79,7 @@ object ContextMenuHook : BaseHook() {
 
   private fun hookPopupWindow(cls: Class<*>) {
     popupWindowFinder?.unhook()
-    cls.declaredConstructors.first().hookAfter {
+    cls.declaredConstructors.first().hookAfter { it, _ ->
       val ctx = it.args[0] as Context
       Resource.enrich(ctx)
       val popupWindow = it.thisObject as PopupWindow
@@ -121,7 +121,7 @@ object ContextMenuHook : BaseHook() {
     } else if (Chrome.isQihoo) {
       val WebViewExtensionClient = Chrome.load("com.qihoo.webkit.extension.WebViewExtensionClient")
       popupWindowFinder =
-          WebViewExtensionClient.declaredConstructors.first().hookAfter {
+          WebViewExtensionClient.declaredConstructors.first().hookAfter { it, _ ->
             val selectionMenuWrapper = it.thisObject
             val showSelectionMenu =
                 findMethodOrNull(selectionMenuWrapper::class.java) { name == "showSelectionMenu" }
@@ -136,7 +136,7 @@ object ContextMenuHook : BaseHook() {
                     .find { it.type.superclass == PopupWindow::class.java }!!
                     .type
             hookPopupWindow(horizontalCustomPopupDialog)
-            showSelectionMenu.hookAfter {
+            showSelectionMenu.hookAfter { it, _ ->
               val view = it.args[0]
               if (WebViewHook.WebView!!.isAssignableFrom(view::class.java)) Chrome.updateTab(view)
               val titleId = R.string.main_menu_eruda_console
@@ -164,7 +164,7 @@ object ContextMenuHook : BaseHook() {
           Chrome.load("com.miui.org.chromium.content.browser.miui.MiuiTextSelectResources")
       val createImageView = findMethod(miuiTextSelectResources) { name == "createImageView" }
       findMethod(miuiFloatingSelectPopupWindow) { name == "showPopup" }
-          .hookAfter {
+          .hookAfter { it, _ ->
             val popupWindow = it.thisObject
             val context = mContext.get(popupWindow) as Context
             val view = mParent.get(popupWindow)

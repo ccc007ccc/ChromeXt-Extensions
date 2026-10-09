@@ -3,17 +3,22 @@ package org.matrix.chromext.utils
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import de.robv.android.xposed.XposedBridge
 import java.lang.ref.WeakReference
 import org.matrix.chromext.BuildConfig
 import org.matrix.chromext.TAG
 
 object Log {
   private var lastToast: WeakReference<Toast>? = null
+  // Keep libxposed types out of this class: the standalone manager has no framework API.
+  @Volatile private var frameworkLogger: ((Int, String, Throwable?) -> Unit)? = null
+
+  fun attachFramework(logger: (Int, String, Throwable?) -> Unit) {
+    frameworkLogger = logger
+  }
 
   fun i(msg: String) {
     Log.i(TAG, msg)
-    XposedBridge.log("ChromeXt logging: " + msg)
+    frameworkLogger?.invoke(Log.INFO, msg, null)
   }
 
   fun d(msg: String, full: Boolean = false) {
@@ -32,12 +37,12 @@ object Log {
 
   fun e(msg: String) {
     Log.e(TAG, msg)
-    XposedBridge.log("ChromeXt error: " + msg)
+    frameworkLogger?.invoke(Log.ERROR, msg, null)
   }
 
   fun ex(thr: Throwable, msg: String = "") {
     Log.e(TAG, msg, thr)
-    XposedBridge.log("ChromeXt exception caught: [${msg}] " + thr.toString())
+    frameworkLogger?.invoke(Log.ERROR, msg, thr)
   }
 
   fun toast(context: Context, msg: String) {

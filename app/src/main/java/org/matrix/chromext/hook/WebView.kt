@@ -1,6 +1,5 @@
 package org.matrix.chromext.hook
 
-import android.os.Build
 import android.os.Handler
 import java.lang.ref.WeakReference
 import org.matrix.chromext.Chrome
@@ -35,7 +34,7 @@ object WebViewHook : BaseHook() {
 
     findMethod(ChromeClient!!, true) { name == "onConsoleMessage" && parameterCount == 1 }
         // public boolean onConsoleMessage (ConsoleMessage consoleMessage)
-        .hookAfter {
+        .hookAfter { it, _ ->
           // Don't use ConsoleMessage to specify this method since Mi Browser uses its own
           // implementation
           // This should be the way to communicate with the front-end of ChromeXt
@@ -49,19 +48,17 @@ object WebViewHook : BaseHook() {
               sourceId.startsWith("local://ChromeXt/init") &&
               lineNumber == Local.anchorInChromeXt) {
             val webView =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                  records
-                      .find {
-                        if (Chrome.isQihoo) {
-                              val mProvider = findField(WebView!!) { name == "mProvider" }
-                              mProvider.get(it.get())
-                            } else {
-                              it.get()
-                            }
-                            ?.invokeMethod { name == "getWebChromeClient" } == chromeClient
-                      }
-                      ?.get()
-                } else Chrome.getTab()
+                records
+                    .find {
+                      if (Chrome.isQihoo) {
+                            val mProvider = findField(WebView!!) { name == "mProvider" }
+                            mProvider.get(it.get())
+                          } else {
+                            it.get()
+                          }
+                          ?.invokeMethod { name == "getWebChromeClient" } == chromeClient
+                    }
+                    ?.get()
             Listener.startAction(message, webView, chromeClient, sourceId)
           } else {
             Log.d(messageLevel.toString() + ": [${sourceId}@${lineNumber}] ${message}")
@@ -75,18 +72,18 @@ object WebViewHook : BaseHook() {
     }
 
     findMethod(WebView!!) { name == "setWebChromeClient" }
-        .hookAfter {
+        .hookAfter { it, _ ->
           val webView = it.thisObject
           records.removeAll(records.filter { it.get() == null || it.get() == webView })
           if (it.args[0] != null) records.add(WeakReference(webView))
         }
 
     findMethod(WebView!!) { name == "onAttachedToWindow" }
-        .hookAfter { Chrome.updateTab(it.thisObject) }
+        .hookAfter { it, _ -> Chrome.updateTab(it.thisObject) }
 
     findMethod(ViewClient!!, true) { name == "onPageStarted" }
         // public void onPageStarted (WebView view, String url, Bitmap favicon)
-        .hookAfter {
+        .hookAfter { it, _ ->
           if (Chrome.isQihoo && it.thisObject::class.java.declaredMethods.size > 1) return@hookAfter
           onUpdateUrl(it.args[1] as String, it.args[0])
         }

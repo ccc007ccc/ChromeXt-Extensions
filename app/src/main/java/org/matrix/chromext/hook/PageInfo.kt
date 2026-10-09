@@ -69,30 +69,34 @@ object PageInfoHook : BaseHook() {
           })
     }
 
-    show.hookBefore {
+    show.intercept { chain ->
       showing = true
       inserted = false
       firstRow = null
       controller = null
+      try {
+        val result = chain.proceed()
+        controller?.let { host -> insertRow(host) }
+        result
+      } finally {
+        showing = false
+        firstRow = null
+        controller = null
+      }
     }
 
-    newRow.hookAfter { if (showing && firstRow == null) firstRow = it.thisObject as ViewGroup }
+    newRow.hookAfter { it, _ ->
+      if (showing && firstRow == null) firstRow = it.thisObject as ViewGroup
+    }
 
     // Native runs these while show() is still on the stack, which is both where the controller
     // instance becomes reachable and the earliest point at which the rows are already laid out.
     proxy.nativeCallbacks.forEach { callback ->
-      callback.hookAfter {
+      callback.hookAfter { it, _ ->
         if (!showing) return@hookAfter
         controller = it.thisObject
         insertRow(it.thisObject)
       }
-    }
-
-    show.hookAfter {
-      showing = false
-      controller?.let { host -> insertRow(host) }
-      firstRow = null
-      controller = null
     }
 
     isInit = true

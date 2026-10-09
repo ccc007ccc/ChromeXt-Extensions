@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Initial acceptance baseline. Other inherited browser hooks are unverified. -->
-    <string-array name="xposedscope">
-        <item>com.android.chrome</item>
-    </string-array>
-</resources>

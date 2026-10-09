@@ -17,7 +17,7 @@ import org.matrix.chromext.utils.findField
 import org.matrix.chromext.utils.findMethod
 import org.matrix.chromext.utils.findMethodOrNull
 import org.matrix.chromext.utils.firstDeclared
-import org.matrix.chromext.utils.hookBefore
+import org.matrix.chromext.utils.intercept
 
 object PreferenceProxy {
   private var clickHooked: Boolean = false
@@ -236,15 +236,13 @@ object PreferenceProxy {
             Pair(name, pref.toString().split(" ").take(3).joinToString(" "))
           }
       findMethod(mClickListener.type) { name == "onClick" }
-          .hookBefore {
-            prefTitles.forEach(
-                fun(p: Pair<String, String>) {
-                  val pref = mPreference.get(it.thisObject)!!
-                  if (pref.toString().startsWith(p.second)) {
-                    listeners[p.first]?.invoke(pref)
-                    it.result = true
-                  }
-                })
+          .intercept { chain ->
+            val pref = mPreference.get(chain.thisObject)!!
+            val match = prefTitles.firstOrNull { pref.toString().startsWith(it.second) }
+            if (match != null) {
+              listeners[match.first]?.invoke(pref)
+              true
+            } else chain.proceed()
           }
     }
   }

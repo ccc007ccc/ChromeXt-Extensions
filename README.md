@@ -13,6 +13,7 @@
 - [兼容矩阵](docs/COMPATIBILITY.md)：已实现、未实现和待实机验证的能力。
 - [Chrome 内原生 UI](docs/NATIVE_UI.md)：参考 Chromium Android 桌面端的正式界面方案。
 - [验证记录](docs/VALIDATION.md)：本轮构建、自动测试和设备验证的实际范围。
+- [现代 LSP API 迁移](docs/LSP_API_MIGRATION.md)：API 102 的入口、Hook、构建与框架要求。
 
 开发分支：feature/webextensions-runtime。首个浏览器基线为 Android 16 上的官方 Chrome 154.0.8037.127。
 
@@ -35,16 +36,22 @@ Google 浏览器同步与扩展的 chrome.storage.sync 是不同功能；后者�
 
 ## 构建
 
-需要 JDK 21、Android SDK Platform 35 / Build Tools 35.0.0。
+需要 JDK 21、Android SDK Platform 37.0 / Build Tools 37.0.0。项目使用 AGP 9.2.1、Gradle 9.5.1 和 AGP 内置 Kotlin；API 依赖为 Maven Central 的 `io.github.libxposed:api:102.0.0`，仅用于编译。
+
+APK 最低支持 Android 8.0（API 26）。Chrome 内的模块功能要求提供 **现代 Xposed API 102** 的框架；旧 Xposed API 82 和现代 API 100/101 不再作为加载目标。独立包管理界面仍可在没有框架的情况下使用。
 
 ~~~sh
-./gradlew :extension-core:test :app:lintDebug :app:assembleDebug :app:assembleRelease
+./gradlew :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
+node --test tests/bridge.test.mjs
+python3 tools/check-xposed-apk.py app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/release/app-release-unsigned.apk
 ~~~
 
 开发机为 SteamOS 时，使用 dev Distrobox 容器运行构建、依赖安装、生成器与测试：
 
 ~~~sh
-distrobox enter -n dev -- env JAVA_HOME=/usr/lib/jvm/java-21-openjdk ANDROID_HOME=/home/deck/Code/Toolchains/android-sdk ./gradlew :extension-core:test :app:lintDebug :app:assembleDebug :app:assembleRelease
+distrobox enter -n dev -- env JAVA_HOME=/usr/lib/jvm/java-21-openjdk ANDROID_HOME=/home/deck/Code/Toolchains/android-sdk ./gradlew :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
+distrobox enter -n dev -- node --test tests/bridge.test.mjs
+distrobox enter -n dev -- python3 tools/check-xposed-apk.py app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/release/app-release-unsigned.apk
 ~~~
 
 也可在未提交的 local.properties 中设置 sdk.dir。调试 APK 输出到 app/build/outputs/apk/debug/app-debug.apk；release 构建默认不签名。

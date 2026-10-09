@@ -1,19 +1,19 @@
 plugins {
   id("com.android.application")
-  id("org.jetbrains.kotlin.android")
   id("com.ncorti.ktfmt.gradle")
 }
 
 android {
-  compileSdk = 35
+  compileSdk { version = release(37) { minorApiLevel = 0 } }
+  buildToolsVersion = "37.0.0"
   namespace = "org.matrix.chromext"
 
   defaultConfig {
     applicationId = "io.github.ccc007ccc.chromextextensions"
-    minSdk = 21
+    minSdk = 26
     targetSdk = 35
-    versionCode = 1
-    versionName = "0.1.0-dev"
+    versionCode = 2
+    versionName = "0.2.0-dev"
   }
 
   buildFeatures { buildConfig = true }
@@ -47,6 +47,8 @@ android {
 }
 
 dependencies {
-  compileOnly("de.robv.android.xposed:api:82")
+  compileOnly("io.github.libxposed:api:102.0.0")
   implementation(project(":extension-core"))
+  testImplementation("io.github.libxposed:api:102.0.0")
+  testImplementation("junit:junit:4.13.2")
 }
