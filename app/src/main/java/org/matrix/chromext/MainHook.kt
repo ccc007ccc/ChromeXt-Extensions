@@ -54,7 +54,7 @@ val supportedPackages =
 class MainHook : IXposedHookLoadPackage, IXposedHookZygoteInit {
   override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
     Log.d(lpparam.processName + " started")
-    if (lpparam.packageName == "org.matrix.chromext") return
+    if (lpparam.packageName == BuildConfig.APPLICATION_ID) return
     if (supportedPackages.contains(lpparam.packageName)) {
       // Every constructor taking a Context, rather than a fixed index into an order the JLS leaves
       // unspecified: browsers do not agree on how many constructors WindowAndroid has, and Whale in

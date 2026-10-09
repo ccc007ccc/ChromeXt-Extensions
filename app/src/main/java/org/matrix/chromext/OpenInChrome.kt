@@ -7,7 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import org.matrix.chromext.utils.Log
 
-const val TAG = "ChromeXt"
+const val TAG = "ChromeXt-Extensions"
 
 class OpenInChrome : Activity() {
   var defaultPackage = "com.android.chrome"

@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <instrumentation
+        android:name="org.matrix.chromext.manager.PackageStoreSmokeInstrumentation"
+        android:targetPackage="io.github.ccc007ccc.chromextextensions"
+        android:label="Package store device verification" />
+</manifest>

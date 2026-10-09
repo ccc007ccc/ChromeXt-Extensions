@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Page Marker",
+  "version": "1.0.0",
+  "description": "Reference WebExtension for popup, content messages and persistent settings.",
+  "permissions": ["storage", "activeTab"],
+  "action": {"default_popup": "popup.html"},
+  "options_ui": {"page": "options.html", "open_in_tab": true},
+  "content_scripts": [{
+    "matches": ["https://example.com/*"],
+    "js": ["content.js"],
+    "run_at": "document_idle"
+  }]
+}

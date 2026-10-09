@@ -1,0 +1,6 @@
+<resources>
+    <string name="view_in_chrome">在 Chrome 中打开</string>
+    <string name="xposed_desc">面向 Android Chrome 的实验性 WebExtensions 运行时。已移除内置油猴；扩展执行能力仍在开发。</string>
+    <string name="main_menu_extension">扩展</string>
+    <string name="main_menu_eruda_console">Eruda 控制台</string>
+</resources>

@@ -12,7 +12,6 @@ import org.json.JSONObject
 import org.matrix.chromext.Chrome
 import org.matrix.chromext.Listener
 import org.matrix.chromext.script.Local
-import org.matrix.chromext.script.ScriptDbManager
 import org.matrix.chromext.utils.Log
 import org.matrix.chromext.utils.findField
 import org.matrix.chromext.utils.findMethod
@@ -101,7 +100,6 @@ object PreferenceProxy {
         preferences["gesture_mod"],
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             sharedPref.getBoolean("gesture_mod", true))
-    setChecked.invoke(preferences["keep_storage"], ScriptDbManager.keepStorage)
 
     var reset_confirming = 1
     val listeners =
@@ -195,16 +193,6 @@ object PreferenceProxy {
                     Log.toast(ctx, "Feature unavailable")
                   }
                 },
-            "keep_storage" to
-                fun(obj: Any) {
-                  val enabled = sharedPref.getBoolean("keep_storage", true)
-                  setChecked.invoke(obj, !enabled)
-                  ScriptDbManager.keepStorage = !enabled
-                  with(sharedPref.edit()) {
-                    putBoolean("keep_storage", !enabled)
-                    apply()
-                  }
-                },
             "reset" to
                 fun(_: Any) {
                   if (reset_confirming < 3) {
@@ -225,7 +213,6 @@ object PreferenceProxy {
                     file.delete()
                     Local.eruda_version = null
                   }
-                  ctx.deleteDatabase("userscript")
                   Log.toast(ctx, "ChromeXt data are reset")
                 })
 

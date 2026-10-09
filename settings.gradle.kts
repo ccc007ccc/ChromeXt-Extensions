@@ -18,4 +18,6 @@ dependencyResolutionManagement {
 
 include(":app")
 
-rootProject.name = "ChromeXt"
+include(":extension-core")
+
+rootProject.name = "ChromeXt-Extensions"

@@ -17,6 +17,7 @@ import org.matrix.chromext.Chrome
 import org.matrix.chromext.Listener
 import org.matrix.chromext.R
 import org.matrix.chromext.Resource
+import org.matrix.chromext.manager.ExtensionManagerLauncher
 import org.matrix.chromext.proxy.PageMenuProxy
 import org.matrix.chromext.proxy.UserScriptProxy
 import org.matrix.chromext.script.Local
@@ -116,18 +117,16 @@ object PageMenuHook : BaseHook() {
         readerMode.activate()
         return true
       }
-      when (ctx.resources.getResourceName(id)) {
-        "org.matrix.chromext:id/extension_id" -> {
-          Listener.on("extension")
+      when {
+        id == R.id.extension_id -> {
+          ExtensionManagerLauncher.open()
+          return true
         }
-        "org.matrix.chromext:id/install_script_id" -> {
-          val sandBoxed = shouldBypassSandbox(getUrl())
-          Chrome.evaluateJavascript(listOf("Symbol.installScript(true);"), null, null, sandBoxed)
+        id == R.id.eruda_console_id -> {
+          UserScriptProxy.evaluateJavascript(Local.openEruda)
+          return true
         }
-        "org.matrix.chromext:id/developer_tools_id" -> Listener.on("inspectPages")
-        "org.matrix.chromext:id/eruda_console_id" ->
-            UserScriptProxy.evaluateJavascript(Local.openEruda)
-        "${ctx.packageName}:id/reload_menu_id" -> {
+        ctx.resources.getResourceName(id) == "${ctx.packageName}:id/reload_menu_id" -> {
           val tab = Chrome.getTab()
           if (tab != null && !UserScriptProxy.isLoading(tab))
               return Listener.on("userAgentSpoof", getUrl()) != null
@@ -311,35 +310,13 @@ object PageMenuHook : BaseHook() {
           val skip = items.filter { it.isVisible() }.size <= 10 || isChromeScheme(url)
           // Inflate only for the main_menu, which has more than visible 10 items at least
 
-          if (skip && !isUserScript(url)) return@prepare
+          if (skip || isDevToolsFrontEnd(url)) return@prepare
           MenuInflater(ctx).inflate(R.menu.main_menu, menu)
 
-          // Show items with indices in main_menu.xml
-          val toShow = mutableListOf<Int>(1) // Reversed index in main_menu
-
-          if (isDevToolsFrontEnd(url)) {
-            toShow.clear()
-          }
-
-          if (isUserScript(url)) {
-            toShow.clear()
-            toShow.add(2)
-            if (skip) {
-              // Show this menu for local preview pages (Custom Tab) of UserScripts
-              items.find { it.itemId == R.id.install_script_id }?.setVisible(true)
-              return@prepare
-            }
-          }
-
-          if (isChromeXtFrontEnd(url)) {
-            toShow.clear()
-            toShow.addAll(listOf(3, 4))
-          }
+          val toShow = listOf(R.id.extension_id, R.id.eruda_console_id)
 
           if (!Chrome.isVivaldi &&
-              ctx.resources.configuration.smallestScreenWidthDp >= DisplayMetrics.DENSITY_XXHIGH &&
-              toShow.size == 1 &&
-              toShow.first() == 1) {
+              ctx.resources.configuration.smallestScreenWidthDp >= DisplayMetrics.DENSITY_XXHIGH) {
             iconRowMenu.setVisible(true)
           }
 
@@ -353,12 +330,12 @@ object PageMenuHook : BaseHook() {
                   }
                   .map { it.index }[1]
 
-          toShow.forEach {
-            val newMenuItem: MenuItem = items[items.size - it]
+          toShow.forEachIndexed { index, id ->
+            val newMenuItem = items.first { item -> item.itemId == id }
+            items.remove(newMenuItem)
             newMenuItem.setVisible(true)
-            items.add(position + 1, newMenuItem)
+            items.add(position + 1 + index, newMenuItem)
           }
-          for (i in 0..3) items.removeLast()
         }
 
     // Inflate for MVC UI model
@@ -527,7 +504,7 @@ object PageMenuHook : BaseHook() {
               .onFailure { Log.ex(it, "Cannot reach the page info entry of the app menu") }
 
           val skip = menuModels.size <= 10 || isChromeScheme(url)
-          if (skip && !isUserScript(url)) return@hookAfter
+          if (skip || isDevToolsFrontEnd(url)) return@hookAfter
 
           fun writeProperty(menuModel: Any, key: Any, value: Any) {
             val valueType =
@@ -580,27 +557,12 @@ object PageMenuHook : BaseHook() {
           }
 
           val entries =
-              if (isChromeXtFrontEnd(url)) {
-                listOf(
-                    Triple(
-                        R.id.developer_tools_id,
-                        R.string.main_menu_developer_tools,
-                        R.drawable.ic_devtools),
-                    Triple(
-                        R.id.extension_id, R.string.main_menu_extension, R.drawable.ic_extension))
-              } else if (isUserScript(url)) {
-                listOf(
-                    Triple(
-                        R.id.install_script_id,
-                        R.string.main_menu_install_script,
-                        R.drawable.ic_install_script))
-              } else {
-                listOf(
-                    Triple(
-                        R.id.eruda_console_id,
-                        R.string.main_menu_eruda_console,
-                        R.drawable.ic_devtools))
-              }
+              listOf(
+                  Triple(R.id.extension_id, R.string.main_menu_extension, R.drawable.ic_extension),
+                  Triple(
+                      R.id.eruda_console_id,
+                      R.string.main_menu_eruda_console,
+                      R.drawable.ic_devtools))
 
           val menusToAdd = mutableListOf<Any>()
           entries.forEach { (id, titleId, iconResId) ->

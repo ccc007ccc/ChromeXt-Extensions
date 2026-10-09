@@ -2,9 +2,7 @@ package org.matrix.chromext.utils
 
 import android.net.Uri
 import android.provider.OpenableColumns
-import kotlin.text.Regex
 import org.matrix.chromext.Chrome
-import org.matrix.chromext.script.Script
 
 const val ERUD_URL = "https://cdn.jsdelivr.net/npm/eruda"
 private const val DEV_FRONT_END = "https://chrome-devtools-frontend.appspot.com"
@@ -14,77 +12,13 @@ fun randomString(length: Int): String {
   return List(length) { alphabet.random() }.joinToString("")
 }
 
-private fun urlMatch(match: String, url: String, strict: Boolean): Boolean {
-  var pattern = match
-  val regexPattern = pattern.startsWith("/") && pattern.endsWith("/")
-
-  if (regexPattern) {
-    pattern = pattern.removeSurrounding("/", "/")
-    pattern = pattern.replace("\\/", "/")
-    pattern = pattern.replace("\\://", "://")
-  } else if ("*" !in pattern) {
-    if (strict) {
-      return pattern == url
-    } else {
-      return pattern in url
-    }
-  } else if ("://" in pattern || strict) {
-    pattern = pattern.replace("?", "\\?")
-    pattern = pattern.replace(".", "\\.")
-    pattern = pattern.replace("*", "[^:]*")
-    pattern = pattern.replace("[^:]*\\.", "([^:]*\\.)?")
-  } else {
-    return false
-  }
-
-  runCatching {
-        val result =
-            if (regexPattern) {
-              Regex(pattern).containsMatchIn(url)
-            } else {
-              Regex(pattern).matches(url)
-            }
-        return result
-      }
-      .onFailure { Log.i("Invaid matching rule: ${match}, error: " + it.message) }
-  return false
-}
-
-fun matching(script: Script, url: String): Boolean {
-  script.exclude.forEach {
-    if (urlMatch(it, url, true)) {
-      return false
-    }
-  }
-  script.match.forEach {
-    if (urlMatch(it, url, false)) {
-      // Log.d("${script.id} injected")
-      return true
-    }
-  }
-  return false
-}
-
 fun isDevToolsFrontEnd(url: String?): Boolean {
   if (url == null) return false
-  return url.startsWith(DEV_FRONT_END)
-}
-
-private val invalidUserScriptDomains = listOf("github.com")
-val invalidUserScriptUrls = mutableListOf<String>()
-
-fun isUserScript(url: String?, path: String? = null): Boolean {
-  if (url == null) return false
-  if (url.endsWith(".user.js") ||
-      (Chrome.isEdge &&
-          url.endsWith(".js") &&
-          (url.startsWith("file://") || url.startsWith("content://")))) {
-    if (invalidUserScriptUrls.contains(url)) return false
-    invalidUserScriptDomains.forEach { if (url.startsWith("https://" + it) == true) return false }
-    return true
-  } else {
-    return (path ?: resolveContentUrl(url)).endsWith(".js")
-  }
+  val parsed = Uri.parse(url)
+  return parsed.scheme == "https" &&
+      parsed.host == Uri.parse(DEV_FRONT_END).host &&
+      parsed.port in listOf(-1, 443) &&
+      parsed.userInfo == null
 }
 
 fun resolveContentUrl(url: String): String {
@@ -100,22 +34,6 @@ fun resolveContentUrl(url: String): String {
     }
   }
   return ""
-}
-
-private val trustedHosts =
-    listOf("jingmatrix.github.io", "jianyu-ma.onrender.com", "jianyu-ma.netlify.app")
-
-fun isChromeXtFrontEnd(url: String?): Boolean {
-  if (url == null || !url.endsWith("/ChromeXt/")) return false
-  trustedHosts.forEach { if (url == "https://" + it + "/ChromeXt/") return true }
-  return false
-}
-
-private val sandboxHosts = listOf("raw.githubusercontent.com", "gist.githubusercontent.com")
-
-fun shouldBypassSandbox(url: String?): Boolean {
-  sandboxHosts.forEach { if (url?.startsWith("https://" + it) == true) return true }
-  return false
 }
 
 fun parseOrigin(url: String): String? {

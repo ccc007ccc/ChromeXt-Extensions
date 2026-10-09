@@ -9,11 +9,11 @@ android {
   namespace = "org.matrix.chromext"
 
   defaultConfig {
-    applicationId = "org.matrix.chromext"
+    applicationId = "io.github.ccc007ccc.chromextextensions"
     minSdk = 21
     targetSdk = 35
-    versionCode = 16
-    versionName = "3.8.2"
+    versionCode = 1
+    versionName = "0.1.0-dev"
   }
 
   buildFeatures { buildConfig = true }
@@ -46,4 +46,7 @@ android {
   }
 }
 
-dependencies { compileOnly("de.robv.android.xposed:api:82") }
+dependencies {
+  compileOnly("de.robv.android.xposed:api:82")
+  implementation(project(":extension-core"))
+}

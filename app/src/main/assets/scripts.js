@@ -12,7 +12,7 @@ if (typeof Symbol.ChromeXt == "undefined") {
 
   const props = {
     Array: Object.getOwnPropertyNames(Array.prototype),
-    ChromeXt: ["commands", "cspRules", "filters", "scripts"],
+    ChromeXt: ["cspRules", "filters"],
     EventTarget: ["addEventListener", "dispatchEvent", "removeEventListener"],
     global: Object.keys(window),
     // Drop user-defined props in the global context
@@ -24,8 +24,6 @@ if (typeof Symbol.ChromeXt == "undefined") {
     // Store some variables to avoid being hooked
     Error: Error,
     Event: CustomEvent,
-    confirm: confirm.bind(window),
-    parse: JSON.parse.bind(JSON),
     stringify: JSON.stringify.bind(JSON),
     setTimeout: setTimeout.bind(window),
   };
@@ -98,13 +96,6 @@ if (typeof Symbol.ChromeXt == "undefined") {
     }
   }
 
-  const trustedDomains = [
-    "greasyfork.org",
-    "raw.githubusercontent.com",
-    "gist.githubusercontent.com",
-  ];
-  // Verified sources of UserScripts
-
   let secure = Symbol("secure"); // Secure states of ChromeXt context
 
   class ChromeXtTarget {
@@ -135,8 +126,7 @@ if (typeof Symbol.ChromeXt == "undefined") {
 
       if (secure.description == "secure" && this.#security == secure) {
         props.ChromeXt.forEach((p) => {
-          const sync = p != "scripts" && p != "commands";
-          const v = new SyncArray(p, sync, p == "scripts");
+          const v = new SyncArray(p);
           this.#store[p] = v;
           this[p] = new Proxy(v, { get: v.proxy });
           delete v.proxy;
@@ -148,95 +138,20 @@ if (typeof Symbol.ChromeXt == "undefined") {
       return props.global;
     }
 
-    /** @param {any | Error} prop */
-    set security(prop) {
-      if (this.#security == secure) return;
-      if (prop != secure && this.#security instanceof backup.Error) return;
-
-      if (prop == secure) {
-        if (typeof backup.debug == "function") console.debug = backup.debug;
-        delete backup.debug;
-      } else if (prop instanceof backup.Error) {
-        this.dispatch("block");
-        console.warn(
-          `Url ${location.href} is not verified for`,
-          `ChromeXt security level ${this.#security} due to`,
-          prop
-        );
-      } else {
-        this.#patchConsole();
-      }
-
-      this.#security = prop;
+    set security(value) {
+      if (value !== secure) throw new backup.Error("Invalid bridge security state");
+      this.#security = value;
     }
 
     #check(security) {
-      if (security != secure) throw backup.Error("Invalid constructor");
-      // Block access to the ChromeXtTarget constructor from outside
-      if (
-        secure.description != "verified" &&
-        location.protocol.startsWith("http") &&
-        location.pathname.endsWith(".user.js") &&
-        typeof installScript == "function" &&
-        !trustedDomains.includes(location.hostname)
-      ) {
-        this.security = "userscript";
-        // Not a secure context since the page might not be a UserScript
-
-        fetch(location.href, { cache: "only-if-cached", mode: "same-origin" })
-          // Local pages are always cached before shown
-          .then((res) => {
-            const type = res.headers.get("Content-Type").trim();
-            if (
-              type.startsWith("text/javascript") ||
-              type.startsWith("application/javascript") ||
-              type.startsWith("text/plain")
-            ) {
-              this.security = secure;
-            } else {
-              throw TypeError(`Incompatible content-type: ${type}`);
-            }
-          })
-          .catch((e) => (this.security = e));
-      } else {
-        this.security = security;
-      }
-    }
-
-    #confirmAction(action) {
-      const msg = [
-        "Current environment is not verified by ChromeXt.",
-        `Please confirm (each time) to trust current page for the action: ${action}.`,
-        "",
-        "See details in https://github.com/JingMatrix/ChromeXt/issues/100.",
-      ];
-      return backup.confirm(msg.join("\n"));
-    }
-
-    #patchConsole() {
-      if (this.#security == secure || backup.debug !== undefined) return;
-      backup.debug = console.debug;
-      console.debug = new Proxy(this.#debug, {
-        apply(_target, _this, args) {
-          try {
-            const data = backup.parse(args.join(""));
-            if ("action" in data) console.warn("Attacks to ChromeXt defended");
-          } catch {}
-          return Reflect.apply(...arguments);
-        },
-      });
+      // Block access to the bridge constructor from outside its closure.
+      this.security = security;
     }
 
     dispatch(action, payload, key) {
       this.isLocked(key != initKey);
-      if (action != "block" && this.#security != secure) {
-        const error = new backup.Error(
-          `ChromeXt called with security level: ${this.#security}`,
-          { cause: this.#security }
-        );
-        if (this.#security instanceof backup.Error) throw error;
-        if (!this.#confirmAction(action)) throw error;
-      }
+      if (this.#security !== secure)
+        throw new backup.Error("Invalid bridge security state");
       // Kotlin anchor
       this.#debug(backup.stringify({ action, payload, key: initKey }));
     }
@@ -351,7 +266,7 @@ if (Symbol.ChromeXt.cspRules.length > 0) {
 
 if (Symbol.ChromeXt.filters.length > 0) {
   const filter = Symbol.ChromeXt.filters.join(", ");
-  let GM_addStyle = (css) => {
+  let addFilterStyle = (css) => {
     const style = document.createElement("style");
     style.textContent = css;
     if (document.head) {
@@ -360,7 +275,7 @@ if (Symbol.ChromeXt.filters.length > 0) {
       setTimeout(() => document.head.appendChild(style));
     }
   };
-  GM_addStyle(filter + " {display: none !important;}");
+  addFilterStyle(filter + " {display: none !important;}");
   window.addEventListener("load", () => {
     document.querySelectorAll(filter).forEach((node) => {
       node.hidden = true;

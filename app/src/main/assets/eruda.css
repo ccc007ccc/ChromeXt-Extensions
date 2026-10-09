@@ -38,9 +38,6 @@
   font-size: 16px;
   transform: translate(-2px, 0.5px);
 }
-#eruda-info .eruda-userscripts > h2 > span.eruda-icon-eye {
-  transform: translate(0px, -6px);
-}
 div.eruda-btn.eruda-search {
   margin-top: 4px;
 }
@@ -142,10 +139,6 @@ h2.eruda-title {
   top: 35px;
   left: 20.5px;
 }
-#eruda-info .eruda-userscripts > h2 > span.eruda-icon-eye {
-  position: relative;
-  right: 10px;
-}
 #eruda-info .eruda-user-agent > div.eruda-content {
   text-wrap: balance;
   text-align: center;
@@ -157,17 +150,6 @@ h2.eruda-title {
 }
 #eruda-info .eruda-check-update {
   text-align: center;
-}
-#eruda-info .eruda-userscripts div.eruda-content,
-#eruda-resources div.eruda-commands {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  > span {
-    padding: 0.3em;
-    margin: 0.3em;
-    border: 0.5px solid violet;
-  }
 }
 #eruda-resources .eruda-filter-item {
   width: 90%;

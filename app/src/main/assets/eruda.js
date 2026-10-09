@@ -280,10 +280,8 @@ eruda.Sources = class extends eruda.Sources {
 eruda.Resources = class extends eruda.Resources {
   _initTpl() {
     super._initTpl();
-    this._$el.prepend(`<div class="${c("section commands")}"></div>`);
     this._$el.prepend(`<div class="${c("section filters")}"></div>`);
     this._$filter = this._$el.find(".eruda-filters.eruda-section");
-    this._$command = this._$el.find(".eruda-commands.eruda-section");
     this._filter = new Filter(this._$filter);
   }
   _bindEvent() {
@@ -303,33 +301,10 @@ eruda.Resources = class extends eruda.Resources {
         this._filter.save();
         this.refreshFilter();
         this._container.notify("Filter Saved");
-      })
-      .on("click", ".eruda-command", (e) => {
-        const index = e.curTarget.dataset.index;
-        const hide = this._command[index].listener(e);
-        if (hide !== false) eruda.hide();
-        this.refreshCommand();
       });
   }
   refresh() {
-    return super.refresh().refreshFilter().refreshCommand();
-  }
-  refreshCommand() {
-    this._command = ChromeXt.commands.filter((m) => m.enabled);
-    const commands = this._command
-      .map(function (cmd, index) {
-        let title = cmd.title.toString();
-        if (typeof cmd.title == "function") {
-          title = cmd.title(index);
-        }
-        return `<span data-index=${index} class="${c("command")}">${title}</span>`;
-      })
-      .join("");
-    this._$command.html(
-      `<h2 class="${c("title")}">UserScript Commands</h2>` +
-        `<div class="${c("commands")}">${commands}</div>`
-    );
-    return this;
+    return super.refresh().refreshFilter();
   }
   refreshFilter() {
     let filterHtml = "<li></li>";
@@ -365,18 +340,6 @@ eruda.Info = class extends eruda.Info {
   _addDefInfo() {
     this._infos = {};
     this.add(
-      "UserScripts",
-      '<input type="file" multiple id="new_script" accept="text/javascript,application/javascript" style="display:none"/>',
-      { li: "userscripts", span: ["add", "eye"] }
-    );
-    const spanScript = `span class="${c("script")}"`;
-    this._infos["UserScripts"].val += ChromeXt.scripts
-      .map(
-        ({ script }, index) =>
-          `<${spanScript} data-index=${index}>${script.name}</span>`
-      )
-      .join("");
-    this.add(
       "User CSP rules",
       ChromeXt.cspRules.length > 0 ? ChromeXt.cspRules.join(" | ") + " | " : "",
       {
@@ -396,7 +359,6 @@ eruda.Info = class extends eruda.Info {
     this._infos = Object.entries(this._infos).map(([k, v]) => {
       return { name: k, ...v };
     });
-    this._infos.splice(2, 2, this._infos[3], this._infos[2]);
     this._render();
     if (ChromeXt.cspRules.length > 0)
       this._$el.find(".eruda-csp-rules > div")[0].contentEditable = true;
@@ -452,33 +414,8 @@ eruda.Info = class extends eruda.Info {
         const rules = this._$el.find(".eruda-csp-rules > div").text() || "";
         ChromeXt.cspRules.sync(rules.split(" | ").filter((r) => r.length > 0));
       })
-      .on("click", ".eruda-userscripts .eruda-script", (e) => {
-        const sources = this._container.get("sources");
-        if (!sources) return;
-        const index = e.curTarget.dataset.index;
-        sources.set("object", ChromeXt.scripts[index].script);
-        this._container.showTool("sources");
-      })
-      .on("click", ".eruda-userscripts .eruda-add", (_e) => {
-        this._$el.find("#new_script")[0].click();
-      })
-      .on("click", ".eruda-userscripts .eruda-icon-eye", (_e) => {
-        window.open("https://jingmatrix.github.io/ChromeXt/");
-      })
       .on("click", ".eruda-check-update", (_e) => {
         ChromeXt.dispatch("updateEruda");
-      })
-      .on("change", "#new_script", (e) => {
-        Array.from(e.curTarget.files).forEach((f) => {
-          if (f.name.endsWith(".user.js")) {
-            f.text().then((s) => {
-              ChromeXt.dispatch("installScript", s);
-              this._container.notify("Installing " + f.name);
-            });
-          } else {
-            this._container.notify(f.name + " is not a UserScript file.");
-          }
-        });
       });
   }
 };

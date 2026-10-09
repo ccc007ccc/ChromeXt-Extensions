@@ -5,8 +5,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import org.matrix.chromext.Chrome
-import org.matrix.chromext.Listener
 import org.matrix.chromext.R
+import org.matrix.chromext.manager.ExtensionManagerLauncher
 import org.matrix.chromext.proxy.PageInfoProxy
 import org.matrix.chromext.proxy.UserScriptProxy
 import org.matrix.chromext.script.Local
@@ -32,27 +32,20 @@ object PageInfoHook : BaseHook() {
     var showing = false
     var inserted = false
 
-    fun erudaRow(url: String, host: Any, parent: ViewGroup): View {
+    fun toolRow(
+        titleRes: Int,
+        iconRes: Int,
+        host: Any,
+        parent: ViewGroup,
+        onClick: () -> Unit
+    ): View {
       val row = newRow.newInstance(parent.getContext(), null) as ViewGroup
       row.setVisibility(View.VISIBLE)
-      (proxy.mIcon?.get(row) as? ImageView)?.setImageResource(R.drawable.ic_devtools)
+      (proxy.mIcon?.get(row) as? ImageView)?.setImageResource(iconRes)
       val subTitle = proxy.mSubtitle?.get(row) as? TextView
       (subTitle?.getParent() as? ViewGroup)?.removeView(subTitle)
       val label = title.get(row) as TextView
-      val onClick: () -> Unit
-      if (isChromeXtFrontEnd(url)) {
-        label.setText(R.string.main_menu_developer_tools)
-        onClick = { Listener.on("inspectPages") }
-      } else if (isUserScript(url)) {
-        label.setText(R.string.main_menu_install_script)
-        onClick = {
-          val sandBoxed = shouldBypassSandbox(url)
-          Chrome.evaluateJavascript(listOf("Symbol.installScript(true);"), null, null, sandBoxed)
-        }
-      } else {
-        label.setText(R.string.main_menu_eruda_console)
-        onClick = { UserScriptProxy.evaluateJavascript(Local.openEruda) }
-      }
+      label.setText(titleRes)
       row.setOnClickListener {
         onClick()
         runCatching { destroy.invoke(host) }.onFailure { Log.ex(it) }
@@ -66,7 +59,14 @@ object PageInfoHook : BaseHook() {
       val url = Chrome.getUrl() ?: return
       if (isChromeScheme(url)) return
       inserted = true
-      parent.addView(erudaRow(url, host, parent))
+      parent.addView(
+          toolRow(R.string.main_menu_extension, R.drawable.ic_extension, host, parent) {
+            ExtensionManagerLauncher.open()
+          })
+      parent.addView(
+          toolRow(R.string.main_menu_eruda_console, R.drawable.ic_devtools, host, parent) {
+            UserScriptProxy.evaluateJavascript(Local.openEruda)
+          })
     }
 
     show.hookBefore {

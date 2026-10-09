@@ -14,15 +14,17 @@ import de.robv.android.xposed.XC_MethodHook.Unhook
 import java.lang.Class
 import java.lang.ref.WeakReference
 import org.matrix.chromext.Chrome
-import org.matrix.chromext.Listener
 import org.matrix.chromext.R
 import org.matrix.chromext.Resource
+import org.matrix.chromext.manager.ExtensionManagerLauncher
 import org.matrix.chromext.script.Local
+import org.matrix.chromext.script.ScriptDbManager
 import org.matrix.chromext.utils.*
 
 object ContextMenuHook : BaseHook() {
 
   val erudaMenuId = 31415926
+  private val extensionMenuId = 31415927
   private var text: WeakReference<TextView>? = null
 
   private fun openEruda(url: String) {
@@ -32,17 +34,10 @@ object ContextMenuHook : BaseHook() {
       val javaScriptEnabled = webSettings.invokeMethod { name == "getJavaScriptEnabled" } as Boolean
       if (!javaScriptEnabled) {
         webSettings.invokeMethod(true) { name == "setJavaScriptEnabled" }
-        Chrome.evaluateJavascript(listOf(Local.initChromeXt))
+        ScriptDbManager.invokeScript(url, Chrome.getTab())
       }
     }
-    if (isChromeXtFrontEnd(url)) {
-      Listener.on("inspectPages")
-    } else if (isUserScript(url)) {
-      val sandBoxed = shouldBypassSandbox(url)
-      Chrome.evaluateJavascript(listOf("Symbol.installScript(true);"), null, null, sandBoxed)
-    } else {
-      Chrome.evaluateJavascript(listOf(Local.openEruda))
-    }
+    Chrome.evaluateJavascript(listOf(Local.openEruda))
   }
 
   private val clickListnerFactory = { mode: ActionMode, url: String ->
@@ -66,10 +61,14 @@ object ContextMenuHook : BaseHook() {
           val menu = it.args[1] as Menu
           if (menu.findItem(erudaMenuId) != null) return@hookAfter
           Resource.enrich(Chrome.getContext())
-          val titleId =
-              if (isChromeXtFrontEnd(url)) R.string.main_menu_developer_tools
-              else if (isUserScript(url)) R.string.main_menu_install_script
-              else R.string.main_menu_eruda_console
+          menu
+              .add(Menu.NONE, extensionMenuId, Menu.NONE, R.string.main_menu_extension)
+              .setOnMenuItemClickListener {
+                ExtensionManagerLauncher.open()
+                mode.finish()
+                true
+              }
+          val titleId = R.string.main_menu_eruda_console
           val erudaMenu = menu.add(titleId)
           val mId = erudaMenu::class.java.getDeclaredField("mId")
           mId.setAccessible(true)
@@ -101,6 +100,18 @@ object ContextMenuHook : BaseHook() {
       }
       view.addView(textView!!, view.childCount)
       text = WeakReference(textView)
+      val extensionView = TextView(ctx)
+      extensionView.setText(R.string.main_menu_extension)
+      extensionView.setHorizontallyScrolling(true)
+      extensionView.setSingleLine(true)
+      extensionView.gravity = sampleView.gravity
+      extensionView.layoutParams = sampleView.layoutParams
+      extensionView.typeface = sampleView.typeface
+      extensionView.setOnClickListener {
+        ExtensionManagerLauncher.open()
+        popupWindow.dismiss()
+      }
+      view.addView(extensionView, view.childCount)
     }
   }
 
@@ -128,11 +139,7 @@ object ContextMenuHook : BaseHook() {
             showSelectionMenu.hookAfter {
               val view = it.args[0]
               if (WebViewHook.WebView!!.isAssignableFrom(view::class.java)) Chrome.updateTab(view)
-              val url = Chrome.getUrl()!!
-              val titleId =
-                  if (isChromeXtFrontEnd(url)) R.string.main_menu_developer_tools
-                  else if (isUserScript(url)) R.string.main_menu_install_script
-                  else R.string.main_menu_eruda_console
+              val titleId = R.string.main_menu_eruda_console
               text?.get()?.setText(titleId)
             }
           }

@@ -1,6 +1,5 @@
 package org.matrix.chromext.hook
 
-import android.app.Activity
 import android.os.Build
 import android.os.Handler
 import java.lang.ref.WeakReference
@@ -12,7 +11,6 @@ import org.matrix.chromext.utils.Log
 import org.matrix.chromext.utils.findField
 import org.matrix.chromext.utils.findMethod
 import org.matrix.chromext.utils.hookAfter
-import org.matrix.chromext.utils.hookBefore
 import org.matrix.chromext.utils.invokeMethod
 
 object WebViewHook : BaseHook() {
@@ -93,8 +91,6 @@ object WebViewHook : BaseHook() {
           onUpdateUrl(it.args[1] as String, it.args[0])
         }
 
-    findMethod(Activity::class.java) { name == "onStop" }
-        .hookBefore { ScriptDbManager.updateScriptStorage() }
     isInit = true
   }
 }

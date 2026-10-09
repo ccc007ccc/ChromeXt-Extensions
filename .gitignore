@@ -1,5 +1,10 @@
-/build
+**/build/
 .gradle
 .kotlin
 apktool
 *.apk
+local.properties
+.idea/
+*.iml
+*.jks
+*.keystore

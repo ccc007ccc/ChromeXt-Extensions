@@ -1,20 +1,13 @@
 package org.matrix.chromext
 
-import android.app.NotificationChannel
-import android.app.NotificationChannelGroup
-import android.app.NotificationManager
 import android.content.Context
 import android.net.Uri
 import android.net.http.HttpResponseCache
-import android.os.Build
 import android.os.Handler
 import java.io.File
 import java.io.FileReader
 import java.lang.ref.WeakReference
-import java.net.CookieManager
-import java.net.HttpCookie
 import java.util.concurrent.Executors
-import org.json.JSONArray
 import org.json.JSONObject
 import org.matrix.chromext.devtools.DevSessions
 import org.matrix.chromext.devtools.getInspectPages
@@ -25,10 +18,7 @@ import org.matrix.chromext.proxy.UserScriptProxy
 import org.matrix.chromext.script.Local
 import org.matrix.chromext.script.ScriptDbManager
 import org.matrix.chromext.utils.Log
-import org.matrix.chromext.utils.XMLHttpRequest
 import org.matrix.chromext.utils.findField
-import org.matrix.chromext.utils.findMethod
-import org.matrix.chromext.utils.hookAfter
 import org.matrix.chromext.utils.invokeMethod
 
 object Chrome {
@@ -49,7 +39,6 @@ object Chrome {
   var packageName: String? = null
 
   val IO = Executors.newCachedThreadPool()
-  val cookieStore = CookieManager().getCookieStore()
 
   fun init(ctx: Context, packageName: String? = null) {
     val initialized = mContext != null
@@ -74,75 +63,12 @@ object Chrome {
     Log.i("Package: ${packageName}, ${version}")
 
     setupHttpCache(ctx)
-    saveRedirectCookie()
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      val groupId = "org.matrix.chromext"
-      val group = NotificationChannelGroup(groupId, "ChromeXt")
-      val notificationManager =
-          ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-      notificationManager.createNotificationChannelGroup(group)
-      val id = "xposed_notification"
-      val name = "UserScript Notifications"
-      val desc = "Notifications created by the GM_notification API"
-      val default_channel =
-          NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH).apply {
-            description = desc
-            setGroup(groupId)
-          }
-      val silent_channel =
-          NotificationChannel(id + "_slient", "Silent " + name, NotificationManager.IMPORTANCE_LOW)
-              .apply {
-                description = desc
-                setGroup(groupId)
-              }
-      notificationManager.createNotificationChannel(default_channel)
-      notificationManager.createNotificationChannel(silent_channel)
-    }
   }
 
   private fun setupHttpCache(context: Context) {
-    val httpCacheDir = File(context.getCacheDir(), "ChromeXt")
+    val httpCacheDir = File(context.getCacheDir(), "ChromeXt-Extensions")
     val httpCacheSize = 16 * 1024 * 1024L
     HttpResponseCache.install(httpCacheDir, httpCacheSize)
-  }
-
-  private fun saveRedirectCookie() {
-    val httpEngine = load("com.android.okhttp.internal.http.HttpEngine")
-    val userRequest = findField(httpEngine) { name == "userRequest" }
-    val userResponse = findField(httpEngine) { name == "userResponse" }
-    val urlString = findMethod(userRequest.type) { name == "urlString" }
-    val headers = findField(userResponse.type) { name == "headers" }
-    val code = findField(userResponse.type) { name == "code" }
-    val message = findField(userResponse.type) { name == "message" }
-    val toMultimap = findMethod(headers.type) { name == "toMultimap" }
-    findMethod(httpEngine) { name == "followUpRequest" }
-        .hookAfter {
-          if (it.result != null) {
-            val url = urlString.invoke(userRequest.get(it.thisObject)) as String
-            val request = Listener.xmlhttpRequests.values.find { it.url.toString() == url }
-            if (request == null || request.anonymous) return@hookAfter
-            val res = userResponse.get(it.thisObject)
-            @Suppress("UNCHECKED_CAST")
-            val headerFields = toMultimap.invoke(headers.get(res)) as Map<String?, List<String>>
-            storeCoookies(request, headerFields)
-            val data = JSONObject()
-            data.put("status", code.get(res) as Int)
-            data.put("statusText", message.get(res) as String)
-            data.put("headers", JSONObject(headerFields.mapValues { JSONArray(it.value) }))
-            request.response("redirect", data, false)
-          }
-        }
-  }
-
-  fun storeCoookies(
-      request: XMLHttpRequest,
-      headerFields: Map<String?, List<String>>,
-  ) {
-    headerFields
-        .filter { it.key != null && it.key!!.lowercase().startsWith("set-cookie") }
-        .forEach {
-          it.value.forEach { HttpCookie.parse(it).forEach { cookieStore.add(request.uri, it) } }
-        }
   }
 
   fun wakeUpDevTools(limit: Int = 10) {

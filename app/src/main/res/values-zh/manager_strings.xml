@@ -1,0 +1,31 @@
+<resources>
+    <string name="manager_preview">扩展包管理 · 开发预览</string>
+    <string name="manager_runtime_pending">扩展运行时正在开发。当前版本可以保存扩展包，暂不能运行扩展。</string>
+    <string name="manager_import">导入扩展 ZIP</string>
+    <string name="manager_refresh">刷新列表</string>
+    <string name="manager_checking">正在检查扩展包…</string>
+    <string name="manager_cannot_read">无法读取所选文件。</string>
+    <string name="manager_archive_limit">扩展 ZIP 超过 64 MiB 大小限制。</string>
+    <string name="manager_review">查看 %1$s</string>
+    <string name="manager_review_note">以上是扩展声明的能力。导入仅保存扩展包，不授予权限或执行代码。</string>
+    <string name="manager_import_only">导入扩展包</string>
+    <string name="manager_importing">正在导入扩展包…</string>
+    <string name="manager_version">版本 %1$s · Manifest V%2$d</string>
+    <string name="manager_permissions">声明的 API 权限</string>
+    <string name="manager_hosts">声明的网站访问权限</string>
+    <string name="manager_content_hosts">内容脚本匹配的网站</string>
+    <string name="manager_optional">可选权限</string>
+    <string name="manager_none">无</string>
+    <string name="manager_loading">正在加载扩展包…</string>
+    <plurals name="manager_count">
+        <item quantity="other">已导入 %1$d 个扩展包</item>
+    </plurals>
+    <string name="manager_empty">尚未导入扩展包。</string>
+    <string name="manager_inactive">未启用 · 扩展运行时尚未就绪</string>
+    <string name="manager_details">查看声明的权限</string>
+    <string name="manager_uninstall">移除扩展包</string>
+    <string name="manager_remove_title">移除 %1$s？</string>
+    <string name="manager_remove_message">这会从 ChromeXt-Extensions 中移除该扩展包。</string>
+    <string name="manager_removing">正在移除扩展包…</string>
+    <string name="manager_failed">操作失败</string>
+</resources>

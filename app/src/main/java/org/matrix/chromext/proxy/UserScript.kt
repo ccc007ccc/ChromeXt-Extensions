@@ -141,7 +141,7 @@ object UserScriptProxy {
     mIsLoading?.let {
       return it.get(tab) as Boolean
     }
-    // With no way to tell, keep injecting: both the init script and GM.bootstrap are idempotent
+    // With no way to tell, keep injecting: the page bridge is idempotent
     // for a given document.
     return if (trackLoadingState) loadingTabs.contains(tab) else true
   }

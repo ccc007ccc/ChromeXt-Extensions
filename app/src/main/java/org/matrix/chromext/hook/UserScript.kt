@@ -175,7 +175,6 @@ object UserScriptHook : BaseHook() {
     // Edge declares neither onResume nor onStop on its own activity, both come from the superclass
     findMethod(proxy.chromeTabbedActivity, true) { name == "onStop" }
         .hookBefore {
-          ScriptDbManager.updateScriptStorage()
           val cache = HttpResponseCache.getInstalled()
           Log.d("HttpResponseCache: Hit ${cache.hitCount} / NetWork ${cache.networkCount}")
           cache.flush()

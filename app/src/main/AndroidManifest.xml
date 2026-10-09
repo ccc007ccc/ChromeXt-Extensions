@@ -28,8 +28,10 @@
 		<package android:name="us.spotco.mulch"/>
 	</queries>
 
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name">
         <meta-data
@@ -52,16 +54,6 @@
 			 <intent-filter>
 				<action android:name="android.intent.action.VIEW" />
 				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="text/javascript" android:scheme="content" />
-			</intent-filter>
-			 <intent-filter>
-				<action android:name="android.intent.action.VIEW" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="application/javascript" android:scheme="content" />
-			</intent-filter>
-			 <intent-filter>
-				<action android:name="android.intent.action.VIEW" />
-				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="text/html" android:scheme="content" />
 			</intent-filter>
 			<intent-filter>
@@ -70,6 +62,15 @@
 				<data android:mimeType="text/plain" />
 			</intent-filter>
 		</activity>
+        <activity
+            android:name=".manager.ExtensionManagerActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
