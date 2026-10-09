@@ -1,4 +1,11 @@
 <resources>
+    <string name="manager_connecting">正在连接扩展包服务…</string>
+    <string name="manager_service_lost">扩展包服务已断开，请关闭并重新打开此面板。</string>
+    <string name="manager_service_unavailable">无法启动扩展包服务。请先打开一次 ChromeXt-Extensions 应用，再回到 Chrome 重试。如果系统限制关联启动，请在该应用的系统设置中允许关联启动。</string>
+    <string name="manager_incognito_unavailable">暂不支持在无痕窗口中管理扩展。</string>
+    <string name="manager_profile_unavailable">无法确认当前浏览器配置，请从普通标签页重试。</string>
+    <string name="manager_previous_page">上一页</string>
+    <string name="manager_next_page">下一页</string>
     <string name="manager_preview">扩展包管理 · 开发预览</string>
     <string name="manager_runtime_pending">扩展运行时正在开发。当前版本可以保存扩展包，暂不能运行扩展。</string>
     <string name="manager_import">导入扩展 ZIP</string>

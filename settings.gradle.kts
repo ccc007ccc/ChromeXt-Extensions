@@ -18,4 +18,6 @@ include(":app")
 
 include(":extension-core")
 
+include(":ipc-probe")
+
 rootProject.name = "ChromeXt-Extensions"

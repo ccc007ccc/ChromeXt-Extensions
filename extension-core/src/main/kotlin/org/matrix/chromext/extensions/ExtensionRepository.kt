@@ -120,6 +120,27 @@ class ExtensionRepository(
    */
   fun list(): List<InstalledExtension> = withStoreLock(createRoot = false) { listLocked() }
 
+  /** Open under the store lock so removal cannot race the path checks and descriptor creation. */
+  fun <T> withResource(installationId: String, relativePath: String, open: (File) -> T): T {
+    if (!validInstallationId(installationId)) {
+      throw ExtensionPackageException(
+          PackageError.INVALID_INSTALLATION_ID, "Invalid extension installation ID")
+    }
+    val path = packagePath(relativePath)
+    return withStoreLock(createRoot = false) {
+      val entry =
+          listLocked().firstOrNull { it.installationId == installationId }
+              ?: throw ExtensionPackageException(
+                  PackageError.MISSING_RESOURCE, "Extension is not installed")
+      val file = containedFile(entry.packageDirectory, path)
+      if (file.canonicalFile != file.absoluteFile || !file.isFile) {
+        throw ExtensionPackageException(
+            PackageError.MISSING_RESOURCE, "Extension resource is unavailable")
+      }
+      open(file)
+    }
+  }
+
   private fun listLocked(): List<InstalledExtension> {
     return root
         .listFiles()

@@ -2,7 +2,6 @@ package org.matrix.chromext.manager
 
 import android.app.Activity
 import android.app.AlertDialog
-import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -13,26 +12,12 @@ import android.widget.ScrollView
 import android.widget.TextView
 import java.io.File
 import java.util.concurrent.Executors
-import org.matrix.chromext.BuildConfig
-import org.matrix.chromext.Chrome
 import org.matrix.chromext.R
 import org.matrix.chromext.extensions.ExtensionInspection
 import org.matrix.chromext.extensions.ExtensionManifest
 import org.matrix.chromext.extensions.ExtensionRepository
 import org.matrix.chromext.extensions.InstalledExtension
 import org.matrix.chromext.extensions.PackageLimits
-
-object ExtensionManagerLauncher {
-  fun open() {
-    Chrome.getContext()
-        .startActivity(
-            Intent()
-                .setComponent(
-                    ComponentName(
-                        BuildConfig.APPLICATION_ID, ExtensionManagerActivity::class.java.name))
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-  }
-}
 
 /** The package manager never executes code from an imported extension. */
 class ExtensionManagerActivity : Activity() {

@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "ChromeXt context experiment A",
+  "version": "1.0",
+  "content_scripts": [{
+    "matches": ["http://127.0.0.1/*", "http://localhost/*"],
+    "js": ["content.js"],
+    "run_at": "document_start",
+    "all_frames": true
+  }],
+  "action": {"default_popup": "popup.html"},
+  "options_page": "popup.html",
+  "background": {"service_worker": "worker.js"},
+  "web_accessible_resources": [{"resources": ["public.txt"], "matches": ["http://127.0.0.1/*"]}]
+}

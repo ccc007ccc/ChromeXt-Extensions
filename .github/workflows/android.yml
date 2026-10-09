@@ -31,9 +31,11 @@ jobs:
       - name: Check retained browser bridge
         run: node --test tests/bridge.test.mjs
       - name: Check and build
-        run: ./gradlew --no-daemon :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease
+        run: ./gradlew --no-daemon :extension-core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease :ipc-probe:assembleDebug
       - name: Verify modern Xposed APKs
-        run: python3 tools/check-xposed-apk.py app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/release/app-release-unsigned.apk
+        run: |
+          python3 tools/check-xposed-apk.py app/build/outputs/apk/debug/app-debug.apk
+          python3 tools/check-xposed-apk.py --forbid-diagnostics app/build/outputs/apk/release/app-release-unsigned.apk
       - uses: actions/upload-artifact@v4
         if: always()
         with:

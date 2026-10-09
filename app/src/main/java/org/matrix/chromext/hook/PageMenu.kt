@@ -102,6 +102,11 @@ object readerMode {
 }
 
 object PageMenuHook : BaseHook() {
+  var modelInsertions: Int = 0
+    private set
+
+  var managerActions: Int = 0
+    private set
 
   private fun getUrl(): String {
     return Chrome.getUrl()!!
@@ -119,7 +124,8 @@ object PageMenuHook : BaseHook() {
       }
       when {
         id == R.id.extension_id -> {
-          ExtensionManagerLauncher.open()
+          managerActions++
+          ExtensionManagerLauncher.open(ctx)
           return true
         }
         id == R.id.eruda_console_id -> {
@@ -376,23 +382,7 @@ object PageMenuHook : BaseHook() {
     // M153 hoisted every model factory into a static helper class that nothing we can name refers
     // to, so when the method is gone we assemble the same model out of PropertyModel itself.
 
-    val modelOfKeys =
-        proxy.propertyModel.declaredConstructors
-            .firstOrNull {
-              it.parameterTypes.size == 1 &&
-                  it.parameterTypes[0].isAssignableFrom(ArrayList::class.java)
-            }
-            ?.also { it.isAccessible = true }
-    // public PropertyModel(List<PropertyKey> keys), the only constructor that registers the keys
-    val propertySetters =
-        proxy.propertyModel.declaredMethods
-            .filter {
-              it.parameterTypes.size == 2 &&
-                  it.returnType == Void.TYPE &&
-                  !Modifier.isStatic(it.modifiers)
-            }
-            .onEach { it.isAccessible = true }
-    // set(WritableIntPropertyKey, int) and its siblings, one overload per value type
+    val propertyModels = PropertyModels(proxy.propertyModel)
 
     val buildNewIncognitoTabItem =
         findMethod(tabbedAppMenuPropertiesDelegate) {
@@ -410,9 +400,6 @@ object PageMenuHook : BaseHook() {
     val model = findField(MVCListAdapter_ListItem) { type == proxy.propertyModel }
     val mType = findField(MVCListAdapter_ListItem) { type == Int::class.java }
     // the original field name was "type"
-
-    val mData = findField(proxy.propertyModel) { Map::class.java.isAssignableFrom(type) }
-    // declared as a raw HashMap since M150
 
     val itemConstructor =
         MVCListAdapter_ListItem.declaredConstructors
@@ -452,18 +439,11 @@ object PageMenuHook : BaseHook() {
           val ctx = mContext.get(delegate) as Context
 
           Resource.enrich(ctx)
-          val url = getUrl()
+          val url = Chrome.getUrl().orEmpty()
 
           @Suppress("UNCHECKED_CAST") val menuModels = mItems.get(result) as MutableList<Any>
 
-          // Every PropertyModel value is boxed in a one field holder, null until the key is written
-          fun propertyOf(item: Any, key: String): Any? {
-            @Suppress("UNCHECKED_CAST")
-            val properties = mData.get(model.get(item)) as Map<Any, Any?>
-            val holder = properties.entries.find { it.key.toString() == key }?.value ?: return null
-            val boxed = holder::class.java.declaredFields.firstOrNull() ?: return null
-            return boxed.also { it.setAccessible(true) }.get(holder)
-          }
+          fun propertyOf(item: Any, key: String): Any? = propertyModels.get(model.get(item)!!, key)
 
           fun menuIdNameOf(item: Any): String? {
             val id = propertyOf(item, "MENU_ITEM_ID") as? Int ?: return null
@@ -486,39 +466,16 @@ object PageMenuHook : BaseHook() {
                   if (pageInfo == null) {
                     Log.d("No page info entry to turn into the reader mode one")
                   } else {
-                    @Suppress("UNCHECKED_CAST")
-                    val pageInfoModel = mData.get(model.get(pageInfo)) as Map<Any, Any?>
-                    pageInfoModel.forEach {
-                      if (it.value == null) {
-                        return@forEach
-                      }
-                      val _value =
-                          it.value!!::class.java.declaredFields[0].also { it.setAccessible(true) }
-                      if (it.key.toString() == "MENU_ITEM_ID") {
-                        _value.set(it.value, readerMode.ID)
-                      } else if (it.key.toString() == "ICON") {
-                        _value.set(it.value, ctx.resources.getDrawable(R.drawable.ic_book, null))
-                      }
-                    }
+                    val pageInfoModel = model.get(pageInfo)!!
+                    propertyModels.set(pageInfoModel, "MENU_ITEM_ID", readerMode.ID)
+                    propertyModels.set(pageInfoModel, "ICON", ctx.getDrawable(R.drawable.ic_book)!!)
                   }
                 }
               }
               .onFailure { Log.ex(it, "Cannot reach the page info entry of the app menu") }
 
-          val skip = menuModels.size <= 10 || isChromeScheme(url)
-          if (skip || isDevToolsFrontEnd(url)) return@hookAfter
-
-          fun writeProperty(menuModel: Any, key: Any, value: Any) {
-            val valueType =
-                when (value) {
-                  is Int -> Int::class.java
-                  is Boolean -> Boolean::class.java
-                  else -> Any::class.java
-                }
-            propertySetters
-                .find { it.parameterTypes[0].isInstance(key) && it.parameterTypes[1] == valueType }
-                ?.invoke(menuModel, key, value)
-          }
+          if (menuModels.any { propertyOf(it, "MENU_ITEM_ID") == R.id.extension_id })
+              return@hookAfter
 
           fun standardMenuItem(id: Int, titleId: Int, iconResId: Int): Any? {
             if (buildModelForStandardMenuItem != null)
@@ -527,19 +484,15 @@ object PageMenuHook : BaseHook() {
             // PropertyModel needs to build an empty one of the same shape. Only the properties
             // buildModelForStandardMenuItem itself writes get filled in: CLICK_HANDLER and the
             // other listeners have to stay unset, or our entry would run the template's action.
-            val candidates =
-                menuModels.filter {
-                  propertyOf(it, "TITLE") is String && propertyOf(it, "ICON") != null
-                }
+            val candidates = menuModels.filter { propertyOf(it, "TITLE") is CharSequence }
             // Only a STANDARD row will do: the key set is copied wholesale, and a TITLE_BUTTON or
             // BUTTON_ROW template carries keys for buttons we never fill in, which the adapter then
             // dereferences. Better no entry than a malformed one.
             val template =
                 candidates.firstOrNull { mType.get(it) == AppMenuItemType.STANDARD.value }
-            if (template == null || modelOfKeys == null) return null
-            @Suppress("UNCHECKED_CAST")
-            val keys = (mData.get(model.get(template)) as Map<Any, Any?>).keys
-            val menuModel = modelOfKeys.newInstance(keys.toList())
+            if (template == null) return null
+            val menuModel = propertyModels.emptyLike(model.get(template)!!)
+            val keys = propertyModels.keys(menuModel)
             keys.forEach { key ->
               val value =
                   when (key.toString()) {
@@ -553,18 +506,21 @@ object PageMenuHook : BaseHook() {
                     "MENU_ICON_AT_START" -> propertyOf(template, key.toString())
                     else -> null
                   }
-              if (value != null) writeProperty(menuModel, key, value)
+              if (value != null) propertyModels.set(menuModel, key.toString(), value)
             }
             return menuModel
           }
 
           val entries =
-              listOf(
-                  Triple(R.id.extension_id, R.string.main_menu_extension, R.drawable.ic_extension),
-                  Triple(
-                      R.id.eruda_console_id,
-                      R.string.main_menu_eruda_console,
-                      R.drawable.ic_devtools))
+              mutableListOf(
+                  Triple(R.id.extension_id, R.string.main_menu_extension, R.drawable.ic_extension))
+          if (url.isNotEmpty() && !isChromeScheme(url) && !isDevToolsFrontEnd(url)) {
+            entries.add(
+                Triple(
+                    R.id.eruda_console_id,
+                    R.string.main_menu_eruda_console,
+                    R.drawable.ic_devtools))
+          }
 
           val menusToAdd = mutableListOf<Any>()
           entries.forEach { (id, titleId, iconResId) ->
@@ -585,6 +541,7 @@ object PageMenuHook : BaseHook() {
           val anchor = dividers.getOrNull(2) ?: dividers.lastOrNull()
           val injectPosition = anchor?.let { menuModels.indexOf(it) } ?: (menuModels.size - 1)
           menuModels.addAll(injectPosition + 1, menusToAdd)
+          modelInsertions++
         }
   }
 }

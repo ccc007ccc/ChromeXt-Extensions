@@ -1,4 +1,11 @@
 <resources>
+    <string name="manager_connecting">Connecting to extension packages…</string>
+    <string name="manager_service_lost">Package service disconnected. Close and reopen this panel.</string>
+    <string name="manager_service_unavailable">The package service could not start. Open ChromeXt-Extensions once, then return to Chrome and retry. If your system restricts launches by other apps, allow them in its app settings.</string>
+    <string name="manager_incognito_unavailable">Extension management is not available in Incognito yet.</string>
+    <string name="manager_profile_unavailable">The current browser profile could not be verified. Try again from a normal tab.</string>
+    <string name="manager_previous_page">Previous</string>
+    <string name="manager_next_page">Next</string>
     <string name="manager_preview">Extension package manager · Development preview</string>
     <string name="manager_runtime_pending">The extension runtime is under development. Imported extensions are stored but cannot run in this build.</string>
     <string name="manager_import">Import extension ZIP</string>

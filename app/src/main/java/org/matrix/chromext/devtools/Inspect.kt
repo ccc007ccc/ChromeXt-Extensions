@@ -5,33 +5,7 @@ import org.json.JSONArray
 import org.matrix.chromext.utils.Log
 
 fun getInspectPages(): JSONArray? {
-  var response = ""
-  runCatching {
-        hitDevTools().inputStream.bufferedReader().use {
-          while (true) {
-            val line = it.readLine()
-            if (line.length == 0) {
-              val bufferSize =
-                  response
-                      .split("\n")
-                      .find { it.startsWith("Content-Length") }!!
-                      .substring(15)
-                      .toInt()
-              val buffer = CharArray(bufferSize)
-              it.read(buffer)
-              response = buffer.joinToString("")
-              it.close()
-              break
-            }
-            response += line + "\n"
-          }
-        }
-      }
-      .onFailure {
-        Log.ex(it)
-        return null
-      }
-  return JSONArray(response)
+  return runCatching { JSONArray(devToolsGet("/json")) }.onFailure { Log.ex(it) }.getOrNull()
 }
 
 fun hitDevTools(): LocalSocket {

@@ -9,5 +9,12 @@ plugins {
 tasks.register<KtfmtFormatTask>("format") {
   source = project.fileTree(rootDir)
   // ktfmt 0.25 does not discover AGP's built-in Kotlin source sets automatically.
-  include("*.gradle.kts", "app/*.gradle.kts", "extension-core/*.gradle.kts", "app/src/**/*.kt")
+  include(
+      "*.gradle.kts",
+      "app/*.gradle.kts",
+      "extension-core/*.gradle.kts",
+      "ipc-probe/*.gradle.kts",
+      "app/src/**/*.kt",
+      "extension-core/src/**/*.kt",
+      "ipc-probe/src/**/*.kt")
 }

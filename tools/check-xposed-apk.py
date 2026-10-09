@@ -65,7 +65,7 @@ class Dex:
                 yield self.strings[name], flags, parameters
 
 
-def verify(path):
+def verify(path, forbid_diagnostics=False):
     entry_name = "org.matrix.chromext.MainHook"
     entry_type = "L" + entry_name.replace(".", "/") + ";"
     api_prefix = "Lio/github/libxposed/api/"
@@ -89,6 +89,9 @@ def verify(path):
             if not re.fullmatch(r"classes\d*\.dex", name):
                 continue
             dex = Dex(apk.read(name))
+            if forbid_diagnostics:
+                assert not {"io.github.ccc007ccc.chromextextensions.DEBUG", "review-fixture"} & set(dex.strings), \
+                    "Privileged debug diagnostics remain in the release APK"
             assert not any(t.startswith("Lde/robv/android/xposed/") or
                            t == "Landroid/app/AndroidAppHelper;" for t in dex.types), \
                 "Legacy framework reference remains in " + name
@@ -110,6 +113,8 @@ def verify(path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--forbid-diagnostics", action="store_true", help="Require all debug browser probes to be stripped")
     parser.add_argument("apk", type=Path, nargs="+")
-    for apk_path in parser.parse_args().apk:
-        verify(apk_path)
+    args = parser.parse_args()
+    for apk_path in args.apk:
+        verify(apk_path, args.forbid_diagnostics)

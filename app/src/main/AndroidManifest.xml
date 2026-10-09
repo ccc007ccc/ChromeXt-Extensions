@@ -35,6 +35,9 @@
         android:icon="@mipmap/ic_launcher"
         android:description="@string/xposed_desc"
         android:label="@string/app_name">
+        <service
+            android:name=".manager.ExtensionStoreService"
+            android:exported="true" />
 		<activity android:name=".OpenInChrome"
 			android:label="@string/view_in_chrome"
 			android:theme="@android:style/Theme.NoDisplay"

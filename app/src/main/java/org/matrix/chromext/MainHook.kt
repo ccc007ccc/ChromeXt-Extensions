@@ -17,6 +17,7 @@ import org.matrix.chromext.hook.PageMenuHook
 import org.matrix.chromext.hook.PreferenceHook
 import org.matrix.chromext.hook.UserScriptHook
 import org.matrix.chromext.hook.WebViewHook
+import org.matrix.chromext.manager.BrowserDiagnostics
 import org.matrix.chromext.utils.Hooks
 import org.matrix.chromext.utils.Log
 import org.matrix.chromext.utils.findMethodOrNull
@@ -91,6 +92,9 @@ class MainHook : XposedModule() {
       constructors.forEach { constructor ->
         constructor.hookAfter { it, _ ->
           Chrome.init(it.args[0] as Context, lpparam.packageName)
+          if (BuildConfig.DEBUG)
+              runCatching { BrowserDiagnostics.install(it.args[0] as Context) }
+                  .onFailure { Log.ex(it, "Cannot register browser diagnostics") }
           // Keep the menu hooks reachable even when the UserScript hook cannot be installed
           runCatching { initHooks(UserScriptHook) }.onFailure { Log.ex(it) }
           if (ContextMenuHook.isInit) return@hookAfter

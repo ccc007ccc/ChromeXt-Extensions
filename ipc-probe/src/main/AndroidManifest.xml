@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries><package android:name="io.github.ccc007ccc.chromextextensions" /></queries>
+    <application android:label="ChromeXt IPC verification" android:allowBackup="false" />
+    <instrumentation android:name="org.matrix.chromext.probe.UnauthorizedBrokerProbe"
+        android:targetPackage="io.github.ccc007ccc.chromextextensions.ipcprobe"
+        android:label="Untrusted caller verification" />
+    <instrumentation android:name="org.matrix.chromext.probe.NativeManagerProbe"
+        android:targetPackage="io.github.ccc007ccc.chromextextensions.ipcprobe"
+        android:label="Chrome native manager verification" />
+</manifest>

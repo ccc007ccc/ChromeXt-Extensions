@@ -1,0 +1,4 @@
+<resources>
+    <item name="extension_manager_panel" type="id" />
+    <item name="extension_manager_import" type="id" />
+</resources>

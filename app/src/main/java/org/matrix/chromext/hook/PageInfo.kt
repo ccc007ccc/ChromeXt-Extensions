@@ -61,7 +61,7 @@ object PageInfoHook : BaseHook() {
       inserted = true
       parent.addView(
           toolRow(R.string.main_menu_extension, R.drawable.ic_extension, host, parent) {
-            ExtensionManagerLauncher.open()
+            ExtensionManagerLauncher.open(parent.context)
           })
       parent.addView(
           toolRow(R.string.main_menu_eruda_console, R.drawable.ic_devtools, host, parent) {
